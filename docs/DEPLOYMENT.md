@@ -15,25 +15,27 @@ yang telah diuji.
 4. Pasang Docker Engine dan Docker Compose v2.
 5. Clone repositori dan buat konfigurasi rahasia lokal.
 
-## Menjalankan stack
+## Menjalankan stack produksi
 
 ```bash
-docker compose up -d --build
+cp .env.example .env
+# Isi password unik, IP sensor, AQMS_HTTP_BIND=0.0.0.0, dan AQMS_HTTP_PORT=80.
+docker compose -f compose.yaml -f compose.production.yaml up -d --build
 docker compose ps
-curl -I http://127.0.0.1:18080/dashboard/
+curl -I http://127.0.0.1/dashboard/
 ```
 
-Untuk produksi, ubah kredensial pengujian di `compose.yaml` atau pindahkan ke
-secret/environment yang tidak dilacak Git.
+`compose.yaml` sendiri adalah mode pengembangan pada port loopback 18080.
+Override produksi mewajibkan kredensial dan allowlist, lalu membuka port web
+sesuai `AQMS_HTTP_BIND`/`AQMS_HTTP_PORT`. Database tidak memiliki port host.
 
 ## Impor data lama
 
 Repositori tidak menyertakan dump operasional. Impor hanya dari backup yang
 telah diverifikasi:
 
-```bash
-docker compose exec -T database mysql -uroot -p partikulat < backup.sql
-```
+Gunakan `scripts/backup.sh` dan `scripts/restore.sh`. Keduanya mengambil
+kredensial dari container sehingga password tidak tampil sebagai argumen host.
 
 Lakukan perintah ini hanya pada database tujuan yang benar. Simpan backup sebelum
 mengimpor atau mengubah skema.
@@ -42,7 +44,8 @@ mengimpor atau mengubah skema.
 
 Firmware ESP8266 biasanya menyimpan alamat penerima secara statis. Cara migrasi
 paling aman adalah mempertahankan alamat Wi-Fi Beelink lama pada instalasi baru,
-kemudian menguji satu paket sensor nyata ke `/insert.php`.
+kemudian menguji satu paket sensor nyata ke `/partikulat/insert.php`. Alias ini
+mempertahankan URL yang umum ditanam pada firmware lama.
 
 Checklist:
 
@@ -55,14 +58,18 @@ Checklist:
 
 ## Scheduler produksi
 
-Contoh cron host setiap lima menit:
+Service `scheduler` sudah berjalan setiap lima menit dengan `restart:
+unless-stopped`. Scheduler memakai advisory lock dan kunci unik waktu bucket,
+sehingga restart atau eksekusi bersamaan tidak menggandakan agregat.
 
-```cron
-*/5 * * * * cd /opt/aqms-portable && docker compose exec -T web php /var/www/html/scheduler/main.php >> /var/log/aqms-scheduler.log 2>&1
-```
+## Migrasi instalasi lama
 
-Sesuaikan path dan kebijakan rotasi log. Systemd timer lebih baik jika dibutuhkan
-monitoring kegagalan yang lebih jelas.
+1. Buat dan uji backup.
+2. Impor dump ke volume baru; jangan memasang langsung volume MySQL 8.0 lama ke
+   image 8.4 tanpa jalur upgrade yang diuji.
+3. Jalankan `database/migrations/002_coretb_unique.sql` satu kali setelah
+   memeriksa kemungkinan duplikat waktu agregat.
+4. Jalankan `tests/smoke.sh` pada stack uji sebelum mengganti unit lapangan.
 
 ## Mode layar 7 inci
 

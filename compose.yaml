@@ -1,12 +1,15 @@
 services:
   database:
-    image: mysql:8.0
+    build:
+      context: .
+      dockerfile: Dockerfile.database
+    restart: unless-stopped
     environment:
-      MYSQL_DATABASE: partikulat
-      MYSQL_USER: aqms
-      MYSQL_PASSWORD: aqms-test-only
-      MYSQL_ROOT_PASSWORD: aqms-root-test-only
-      TZ: Asia/Jakarta
+      MYSQL_DATABASE: ${AQMS_DB_NAME:-partikulat}
+      MYSQL_USER: ${AQMS_DB_USER:-aqms}
+      MYSQL_PASSWORD: ${AQMS_DB_PASSWORD:?set AQMS_DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${AQMS_DB_ROOT_PASSWORD:?set AQMS_DB_ROOT_PASSWORD in .env}
+      TZ: ${AQMS_TIMEZONE:-Asia/Jakarta}
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 3s
@@ -14,18 +17,46 @@ services:
       retries: 30
     volumes:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+      - aqms_database:/var/lib/mysql
 
   web:
     build: .
+    restart: unless-stopped
     environment:
       AQMS_DB_HOST: database
-      AQMS_DB_USER: aqms
-      AQMS_DB_PASSWORD: aqms-test-only
-      AQMS_DB_NAME: partikulat
-      AQMS_DISPLAY_NAME: PARTIKULAT 02 — UJI MIGRASI
-      AQMS_TIMEZONE: Asia/Jakarta
+      AQMS_DB_USER: ${AQMS_DB_USER:-aqms}
+      AQMS_DB_PASSWORD: ${AQMS_DB_PASSWORD:?set AQMS_DB_PASSWORD in .env}
+      AQMS_DB_NAME: ${AQMS_DB_NAME:-partikulat}
+      AQMS_DISPLAY_NAME: ${AQMS_DISPLAY_NAME:-PARTIKULAT 02 — UJI MIGRASI}
+      AQMS_TIMEZONE: ${AQMS_TIMEZONE:-Asia/Jakarta}
+      AQMS_INGEST_ALLOWED_CIDRS: ${AQMS_INGEST_ALLOWED_CIDRS:-127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+      AQMS_INGEST_TOKEN: ${AQMS_INGEST_TOKEN:-}
+      AQMS_INGEST_MIN_INTERVAL_SECONDS: ${AQMS_INGEST_MIN_INTERVAL_SECONDS:-1}
     depends_on:
       database:
         condition: service_healthy
     ports:
-      - "127.0.0.1:18080:80"
+      - "${AQMS_HTTP_BIND:-127.0.0.1}:${AQMS_HTTP_PORT:-18080}:80"
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1/health.php') === \"ok\\n\" ? 0 : 1);"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+
+  scheduler:
+    build: .
+    restart: unless-stopped
+    command: ["aqms-scheduler-loop"]
+    environment:
+      AQMS_DB_HOST: database
+      AQMS_DB_USER: ${AQMS_DB_USER:-aqms}
+      AQMS_DB_PASSWORD: ${AQMS_DB_PASSWORD:?set AQMS_DB_PASSWORD in .env}
+      AQMS_DB_NAME: ${AQMS_DB_NAME:-partikulat}
+      AQMS_TIMEZONE: ${AQMS_TIMEZONE:-Asia/Jakarta}
+    depends_on:
+      database:
+        condition: service_healthy
+
+volumes:
+  aqms_database:

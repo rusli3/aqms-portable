@@ -20,8 +20,3 @@ app/dashboard/css/night.css
 app/dashboard/js/chartgas.js
 app/dashboard/js/chartmeteo.js
 app/dashboard/js/custom.js
-app/dashboard/js/highchart/accessibility.js
-app/dashboard/js/highchart/export-data.js
-app/dashboard/js/highchart/exporting.js
-app/dashboard/js/highchart/high-contrast-light.js
-app/dashboard/js/highchart/series-label.js

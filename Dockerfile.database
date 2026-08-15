@@ -1,0 +1,10 @@
+FROM mysql:8.4.11-oraclelinux9@sha256:b3b90af2a6552ae30c266fdb7d5dd55f3afb72404bb78d37fe8a23eb857fd3fb
+
+# AQMS tidak memakai MySQL Shell. util-linux menyediakan setpriv sehingga
+# entrypoint tetap menurunkan hak akses ke user mysql tanpa binary Go gosu.
+RUN microdnf install -y util-linux \
+    && microdnf remove -y mysql-shell \
+    && sed -i 's/exec gosu mysql "$BASH_SOURCE" "$@"/exec setpriv --reuid=mysql --regid=mysql --init-groups "$BASH_SOURCE" "$@"/' /usr/local/bin/docker-entrypoint.sh \
+    && rm -f /usr/local/bin/gosu \
+    && microdnf clean all \
+    && rm -rf /var/cache/dnf

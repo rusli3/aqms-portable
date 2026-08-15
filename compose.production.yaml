@@ -1,0 +1,19 @@
+services:
+  database:
+    environment:
+      MYSQL_DATABASE: ${AQMS_DB_NAME:?set AQMS_DB_NAME in .env}
+      MYSQL_USER: ${AQMS_DB_USER:?set AQMS_DB_USER in .env}
+      MYSQL_PASSWORD: ${AQMS_DB_PASSWORD:?set AQMS_DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${AQMS_DB_ROOT_PASSWORD:?set AQMS_DB_ROOT_PASSWORD in .env}
+
+  web:
+    environment:
+      AQMS_DB_USER: ${AQMS_DB_USER:?set AQMS_DB_USER in .env}
+      AQMS_DB_PASSWORD: ${AQMS_DB_PASSWORD:?set AQMS_DB_PASSWORD in .env}
+      AQMS_DB_NAME: ${AQMS_DB_NAME:?set AQMS_DB_NAME in .env}
+      AQMS_INGEST_ALLOWED_CIDRS: ${AQMS_INGEST_ALLOWED_CIDRS:?set sensor IP or CIDR in .env}
+  scheduler:
+    environment:
+      AQMS_DB_USER: ${AQMS_DB_USER:?set AQMS_DB_USER in .env}
+      AQMS_DB_PASSWORD: ${AQMS_DB_PASSWORD:?set AQMS_DB_PASSWORD in .env}
+      AQMS_DB_NAME: ${AQMS_DB_NAME:?set AQMS_DB_NAME in .env}

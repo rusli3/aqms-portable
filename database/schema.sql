@@ -29,5 +29,5 @@ CREATE TABLE IF NOT EXISTS `coretb` (
   `volt` float DEFAULT NULL,
   `press` float DEFAULT NULL,
   PRIMARY KEY (`no`),
-  KEY `idx_coretb_waktu` (`waktu`)
+  UNIQUE KEY `uq_coretb_waktu` (`waktu`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

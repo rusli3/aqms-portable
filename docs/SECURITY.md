@@ -1,33 +1,41 @@
 # Keamanan
 
-## Keadaan saat ini
+## Kontrol yang diterapkan
 
-- Kredensial database tidak ditulis di source code.
-- Query ingest dan scheduler menggunakan prepared statement.
-- Parameter sensor harus lengkap, numerik, dan finite.
-- Sinkronisasi cloud SenseSync telah dihapus.
-- Dashboard dan pustaka grafik utama dapat berjalan lokal.
-- Dump database, backup perangkat, dan `.env` dikecualikan dari Git.
+- Database tidak dipublikasikan ke host dan memakai kredensial environment.
+- Endpoint ingest hanya menerima GET dari IP/CIDR yang diizinkan, mendukung token
+  opsional, membatasi laju global, menolak parameter asing, dan memeriksa rentang.
+- Query tulis dan filter riwayat memakai prepared statement.
+- Apache menyembunyikan versi rinci, menonaktifkan directory listing dan TRACE,
+  serta mengirim CSP, `nosniff`, frame denial, referrer, dan permissions policy.
+- PHP tidak mengekspos versi atau error ke browser.
+- Dashboard dan ekspor CSV tidak memerlukan CDN atau koneksi internet.
+- Named volume, backup terverifikasi, healthcheck, restart policy, dan CI tersedia.
+- Sinkronisasi cloud SenseSync tidak ada dalam aplikasi modern.
 
-## Risiko yang masih diterima
+CSP tidak mengizinkan script inline. `style-src` mengizinkan inline style karena
+Chart.js dan indikator baterai/ISPU mengubah dimensi atau warna langsung pada
+elemen; tidak ada nilai style yang berasal dari input pengguna.
 
-Endpoint `/insert.php` belum memakai autentikasi agar firmware ESP8266 lama tetap
-kompatibel. Siapa pun yang dapat menjangkau web server dapat mencoba mengirim
-data palsu. Karena itu layanan tidak boleh diekspos langsung ke internet.
+## Konfigurasi lapangan
 
-## Rekomendasi produksi
+1. Gunakan `compose.production.yaml` dan password unik di `.env`.
+2. Isi `AQMS_INGEST_ALLOWED_CIDRS` sesempit mungkin, idealnya satu alamat `/32`.
+3. Aktifkan `AQMS_INGEST_TOKEN` setelah firmware dapat mengirim header
+   `X-AQMS-Token` atau parameter `token`.
+4. Tempatkan sensor dan Beelink pada VLAN/Wi-Fi AQMS; jangan ekspos layanan ke
+   internet dan jangan memasang phpMyAdmin.
+5. Simpan backup di media lain, uji restore, dan pantau respons 403/422/429.
+6. Tinjau Dependabot dan scan image sebelum setiap deployment.
 
-1. Tempatkan sensor dan Beelink pada VLAN atau Wi-Fi khusus AQMS.
-2. Batasi port web dengan firewall hanya untuk subnet sensor dan operator.
-3. Jangan publikasikan phpMyAdmin.
-4. Gunakan kredensial database unik dengan hak minimum.
-5. Cadangkan database secara berkala dan uji proses restore.
-6. Pantau paket ingest yang terlalu cepat, nilai di luar rentang, dan jeda data.
-7. Tambahkan token/HMAC setelah firmware berhasil dicadangkan dan dapat diubah.
-8. Pasang pembaruan keamanan OS/container secara terjadwal setelah diuji.
+## Batas yang tetap berlaku
+
+Firmware lama tanpa token mengandalkan kontrol jaringan dan CIDR. Rate limit
+bersifat global per unit, bukan identitas sensor. Image database resmi masih
+dapat membawa temuan upstream; status dan alasan penerimaan residual dicatat di
+`docs/CONTAINER_SECURITY.md` dan harus ditinjau ulang berkala.
 
 ## Pelaporan kerentanan
 
 Jangan membuka issue publik yang berisi alamat perangkat, dump database,
-kredensial, atau detail akses. Hubungi pemilik repositori secara privat terlebih
-dahulu.
+kredensial, atau detail akses. Hubungi pemilik repositori secara privat.

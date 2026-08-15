@@ -69,35 +69,66 @@ function aqms_ispu_index(float $concentration, string $parameter): int
     return 500;
 }
 
+function aqms_ispu_basis(array $timestamps): array
+{
+    $sampleCount = count($timestamps);
+    $hours = $sampleCount > 1
+        ? max(0.0, min(24.0, (end($timestamps) - $timestamps[0]) / 3600))
+        : 0.0;
+    $maximumGapSeconds = 0;
+    for ($index = 1; $index < $sampleCount; $index++) {
+        $maximumGapSeconds = max($maximumGapSeconds, $timestamps[$index] - $timestamps[$index - 1]);
+    }
+
+    // Agregator menghasilkan satu sampel per lima menit: 289 titik termasuk kedua ujung 24 jam.
+    $expectedSamples = 289;
+    $minimumSamples = 260;
+    $complete = $hours >= 23.75 && $sampleCount >= $minimumSamples && $maximumGapSeconds <= 15 * 60;
+
+    return [
+        'hours' => round($hours, 1),
+        'sampleCount' => $sampleCount,
+        'expectedSampleCount' => $expectedSamples,
+        'coveragePercent' => round(min(100.0, ($sampleCount / $expectedSamples) * 100), 1),
+        'maxGapMinutes' => round($maximumGapSeconds / 60, 1),
+        'complete' => $complete,
+    ];
+}
+
 function aqms_ispu_payload(mysqli $database): ?array
 {
     $result = $database->query(
-        'SELECT COUNT(*) AS sample_count, MIN(waktu) AS first_sample, MAX(waktu) AS last_sample, '
-        . 'AVG(pm25) AS pm25_average, AVG(pm10) AS pm10_average '
-        . 'FROM coretb WHERE waktu >= (SELECT DATE_SUB(MAX(waktu), INTERVAL 24 HOUR) FROM coretb)'
+        'SELECT waktu, pm25, pm10 FROM coretb '
+        . 'WHERE waktu >= (SELECT DATE_SUB(MAX(waktu), INTERVAL 24 HOUR) FROM coretb) '
+        . 'ORDER BY waktu ASC'
     );
-    $row = $result->fetch_assoc();
+    $timestamps = [];
+    $pm25Sum = 0.0;
+    $pm10Sum = 0.0;
+    $sampleCount = 0;
+    while ($row = $result->fetch_assoc()) {
+        $timestamp = strtotime((string) $row['waktu']);
+        if ($timestamp === false || $row['pm25'] === null || $row['pm10'] === null) {
+            continue;
+        }
+        $timestamps[] = $timestamp;
+        $pm25Sum += (float) $row['pm25'];
+        $pm10Sum += (float) $row['pm10'];
+        $sampleCount++;
+    }
 
-    if (!$row || (int) $row['sample_count'] === 0) {
+    if ($sampleCount === 0) {
         return null;
     }
 
-    $pm25Average = (float) $row['pm25_average'];
-    $pm10Average = (float) $row['pm10_average'];
+    $pm25Average = $pm25Sum / $sampleCount;
+    $pm10Average = $pm10Sum / $sampleCount;
     $pm25Index = aqms_ispu_index($pm25Average, 'pm25');
     $pm10Index = aqms_ispu_index($pm10Average, 'pm10');
-    $firstTime = strtotime((string) $row['first_sample']);
-    $lastTime = strtotime((string) $row['last_sample']);
-    $hours = ($firstTime !== false && $lastTime !== false)
-        ? max(0.0, min(24.0, ($lastTime - $firstTime) / 3600))
-        : 0.0;
+    $basis = aqms_ispu_basis($timestamps);
 
     return [
-        'basis' => [
-            'hours' => round($hours, 1),
-            'sampleCount' => (int) $row['sample_count'],
-            'complete' => $hours >= 23.0,
-        ],
+        'basis' => $basis,
         'pm25' => [
             'value' => $pm25Index,
             'category' => aqms_ispu_category($pm25Index),

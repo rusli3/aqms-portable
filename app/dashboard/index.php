@@ -2,23 +2,10 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/con_.php';
-require_once __DIR__ . '/lib/dashboard-data.php';
+require_once __DIR__ . '/../config/database.php';
 
 date_default_timezone_set(aqms_env('AQMS_TIMEZONE', 'Asia/Jakarta'));
-
-try {
-    $initialData = aqms_dashboard_payload($koneksi);
-} catch (Throwable $error) {
-    error_log('AQMS dashboard load failed: ' . $error->getMessage());
-    $initialData = aqms_empty_dashboard_payload();
-}
-
-$pageTitle = htmlspecialchars($spkua, ENT_QUOTES, 'UTF-8');
-$initialJson = json_encode(
-    $initialData,
-    JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
-);
+$pageTitle = htmlspecialchars((string) aqms_env('AQMS_DISPLAY_NAME', 'PARTIKULAT 02'), ENT_QUOTES, 'UTF-8');
 ?>
 <!doctype html>
 <html lang="id">
@@ -108,7 +95,9 @@ $initialJson = json_encode(
                             <span><i class="legend-dot pm10"></i>PM10</span>
                         </div>
                     </div>
-                    <div id="particleChart" aria-label="Grafik riwayat partikulat"></div>
+                    <div class="chart-frame">
+                        <canvas id="particleChart" role="img" aria-label="Grafik riwayat partikulat"></canvas>
+                    </div>
                 </article>
             </section>
 
@@ -186,8 +175,7 @@ $initialJson = json_encode(
         </footer>
     </main>
 
-    <script>window.AQMS_INITIAL = <?= $initialJson ?: 'null' ?>;</script>
-    <script src="js/highchart/highcharts.js"></script>
+    <script src="js/vendor/chart.js/chart.umd.min.js"></script>
     <script src="js/dashboard-7.js"></script>
 </body>
 </html>

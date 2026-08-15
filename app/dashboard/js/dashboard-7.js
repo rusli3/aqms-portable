@@ -82,8 +82,9 @@
 
       var hours = number(ispu.basis.hours, 1);
       setText(elements.ispuBasis, complete
-        ? 'Rerata 24 jam sesuai breakpoint ISPU Indonesia.'
-        : 'Sementara: basis ' + hours + ' jam / ' + ispu.basis.sampleCount + ' sampel.');
+        ? 'Rerata 24 jam; cakupan dan kontinuitas data terpenuhi.'
+        : 'Sementara: ' + hours + ' jam · ' + number(ispu.basis.coveragePercent, 0)
+          + '% cakupan · jeda maks ' + number(ispu.basis.maxGapMinutes, 0) + ' mnt.');
     } else {
       document.documentElement.style.setProperty('--quality', '#8da09a');
       setText(elements.quality, 'BELUM ADA DATA');
@@ -104,57 +105,80 @@
     }
   }
 
-  function historySeries(history, field) {
+  function historyValues(history, field) {
+    return (history || []).map(function (row) {
+      var value = Number(row[field]);
+      return isFinite(value) ? value : null;
+    });
+  }
+
+  function historyLabels(history) {
     return (history || []).map(function (row) {
       var time = dateFromDatabase(row.time);
-      return [time ? time.getTime() : 0, Number(row[field])];
-    }).filter(function (point) {
-      return point[0] > 0 && isFinite(point[1]);
+      return time && !isNaN(time.getTime())
+        ? time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':')
+        : '--:--';
     });
   }
 
   function chartOptions(history) {
     return {
-      chart: { type: 'spline', backgroundColor: 'transparent', animation: false, margin: [7, 4, 22, 30] },
-      title: { text: null },
-      credits: { enabled: false },
-      exporting: { enabled: false },
-      legend: { enabled: false },
-      xAxis: {
-        type: 'datetime', lineColor: 'rgba(181,255,209,.12)', lineWidth: 1, tickColor: 'rgba(181,255,209,.12)', tickLength: 3,
-        gridLineWidth: 1, gridLineColor: 'rgba(181,255,209,.07)',
-        labels: { y: 12, style: { color: '#71847e', fontSize: '8px' }, format: '{value:%H:%M}' }
+      type: 'line',
+      data: {
+        labels: historyLabels(history),
+        datasets: [
+          { label: 'PM1', borderColor: '#54d6cf', data: historyValues(history, 'pm1'), borderWidth: 2 },
+          { label: 'PM2.5', borderColor: '#98f06a', data: historyValues(history, 'pm25'), borderWidth: 3 },
+          { label: 'PM10', borderColor: '#f2b84b', data: historyValues(history, 'pm10'), borderWidth: 2 }
+        ]
       },
-      yAxis: {
-        min: 0, title: { text: null }, gridLineColor: 'rgba(181,255,209,.09)',
-        labels: { style: { color: '#71847e', fontSize: '8px' } }
-      },
-      tooltip: {
-        shared: true, borderWidth: 0, borderRadius: 8, backgroundColor: 'rgba(4,14,12,.94)',
-        style: { color: '#f3f7ee', fontSize: '10px' }, xDateFormat: '%d %b, %H:%M'
-      },
-      plotOptions: {
-        series: { animation: false, marker: { enabled: false }, lineWidth: 2 },
-        spline: { states: { hover: { lineWidth: 2 } } }
-      },
-      series: [
-        { name: 'PM1', color: '#54d6cf', data: historySeries(history, 'pm1') },
-        { name: 'PM2.5', color: '#98f06a', lineWidth: 3, data: historySeries(history, 'pm25') },
-        { name: 'PM10', color: '#f2b84b', data: historySeries(history, 'pm10') }
-      ]
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        normalized: true,
+        interaction: { mode: 'index', intersect: false },
+        elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.32 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(4,14,12,.94)',
+            titleColor: '#8da09a',
+            bodyColor: '#f3f7ee',
+            borderColor: 'rgba(181,255,209,.12)',
+            borderWidth: 1,
+            padding: 8,
+            displayColors: true
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(181,255,209,.07)', tickLength: 3 },
+            border: { color: 'rgba(181,255,209,.12)' },
+            ticks: { color: '#71847e', font: { size: 8 }, maxTicksLimit: 7, maxRotation: 0 }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(181,255,209,.09)' },
+            border: { display: false },
+            ticks: { color: '#71847e', font: { size: 8 }, maxTicksLimit: 5 }
+          }
+        }
+      }
     };
   }
 
   function updateChart(history) {
-    if (!window.Highcharts) return;
+    if (!window.Chart) return;
     if (!chart) {
-      chart = window.Highcharts.chart('particleChart', chartOptions(history));
+      chart = new window.Chart(elements.chart.getContext('2d'), chartOptions(history));
       return;
     }
+    chart.data.labels = historyLabels(history);
     ['pm1', 'pm25', 'pm10'].forEach(function (field, index) {
-      chart.series[index].setData(historySeries(history, field), false, false, false);
+      chart.data.datasets[index].data = historyValues(history, field);
     });
-    chart.redraw(false);
+    chart.update('none');
   }
 
   function render(payload) {
@@ -208,7 +232,7 @@
       batteryFill: byId('batteryFill'), systemBadge: byId('systemBadge'), lastReading: byId('lastReadingTime'),
       sensorLink: byId('sensorLink'), sensorLinkText: byId('sensorLinkText'), clock: byId('liveClock'),
       date: byId('liveDate'), refresh: byId('refreshButton'), updateMessage: byId('updateMessage'),
-      fullscreen: byId('fullscreenButton')
+      fullscreen: byId('fullscreenButton'), chart: byId('particleChart')
     };
   }
 
@@ -216,7 +240,8 @@
     cacheElements();
     updateClock();
     window.setInterval(updateClock, 1000);
-    render(window.AQMS_INITIAL || { latest: null, history: [] });
+    render({ latest: null, history: [] });
+    fetchData(false);
     elements.refresh.addEventListener('click', function () { fetchData(true); });
     elements.fullscreen.addEventListener('click', toggleFullscreen);
     refreshTimer = window.setInterval(function () { fetchData(false); }, 15000);

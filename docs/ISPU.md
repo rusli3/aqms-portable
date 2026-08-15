@@ -42,10 +42,14 @@ Keterangan:
 4. Pilih dua breakpoint yang mengapit konsentrasi.
 5. Lakukan interpolasi dan bulatkan ke indeks terdekat.
 6. Batasi nilai implementasi maksimum pada 500.
-7. Tandai hasil sebagai **ISPU Sementara** bila rentang data kurang dari 23 jam.
+7. Periksa kelengkapan: rentang minimal 23 jam 45 menit, minimal 260 dari 289
+   titik lima-menit (≈90%), dan jeda maksimum 15 menit.
+8. Tampilkan **ISPU 24 JAM** hanya jika ketiga syarat terpenuhi; selain itu
+   tampilkan **ISPU Sementara**.
 
-Label sementara penting karena perangkat yang baru menyala belum memiliki data
-24 jam. Nilainya berguna untuk pengamatan operasional, tetapi tidak boleh
+Pemeriksaan ini mencegah dua sampel yang berjauhan dianggap sebagai data kontinu.
+Label sementara penting karena perangkat yang baru menyala atau mengalami jeda
+belum memiliki data 24 jam yang memadai. Nilainya tidak boleh
 disamakan dengan pelaporan resmi tanpa pemeriksaan kelengkapan data dan QA/QC.
 
 ## Rujukan

@@ -18,10 +18,10 @@ cloud vendor tidak digunakan oleh build modern.
 
 1. Sensor memberikan pembacaan kepada ESP8266.
 2. ESP8266 mengirim sepuluh parameter numerik ke `insert.php`.
-3. Endpoint memvalidasi paket dan menulisnya ke `maintb` dengan prepared
-   statement.
-4. `scheduler/main.php` membaca sampel lima menit terakhir.
-5. Jika sampel tersedia, scheduler menulis rata-ratanya ke `coretb`.
+3. Endpoint memeriksa metode, CIDR/token, laju, parameter, dan rentang nilai,
+   lalu menulisnya ke `maintb` dengan prepared statement.
+4. Service scheduler membaca bucket lima menit terakhir yang sudah selesai.
+5. Advisory lock dan waktu bucket unik mencegah agregat ganda di `coretb`.
 6. Dashboard API mengambil pembacaan mentah terbaru, riwayat agregat, dan rerata
    untuk ISPU.
 7. Browser memperbarui data setiap 15 detik tanpa reload halaman penuh.
@@ -52,7 +52,8 @@ logika kendali diubah.
 ## Batas sistem
 
 - Tidak ada sinkronisasi cloud SenseSync.
-- Endpoint ingest belum memakai token agar kompatibel dengan firmware lama.
-- Dashboard dapat berjalan tanpa internet karena aset utamanya disimpan lokal.
-- Halaman riwayat memakai prepared statement, tetapi aset ekspor DataTables masih
-  bergantung pada internet dan menjadi area migrasi lanjutan.
+- Token ingest bersifat opsional agar firmware lama tetap kompatibel; allowlist
+  CIDR dan rate limit tetap aktif.
+- Jalur `/partikulat/insert.php` dipertahankan sebagai alias protokol lama.
+- Dashboard, Chart.js, halaman riwayat, dan ekspor CSV berjalan tanpa internet.
+- MySQL tidak dipublikasikan ke host dan datanya berada pada named volume.

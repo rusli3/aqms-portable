@@ -10,8 +10,9 @@ lebih aman dan mudah dipulihkan.
 ## Status proyek
 
 - Dashboard dirancang untuk layar sentuh 7 inci pada 1024×600 dan 800×480.
-- Aplikasi telah diuji dengan PHP 8.3 dan MySQL 8 melalui Docker Compose.
+- Aplikasi menggunakan PHP 8.3.32 dan MySQL 8.4.11 dengan image/digest terkunci.
 - Pembacaan sensor disimpan lokal; sinkronisasi cloud SenseSync telah dihapus.
+- Database memakai named volume `aqms_database` dan bertahan setelah `docker compose down`.
 - Kredensial database berasal dari environment variable, bukan source code.
 - Salinan ini tidak menyertakan backup, dump operasional, atau data perangkat.
 - Instalasi Beelink lama belum diganti otomatis oleh repositori ini.
@@ -20,12 +21,14 @@ lebih aman dan mudah dipulihkan.
 
 - Pembacaan PM1, PM2.5, PM10, suhu, kelembapan, dan tekanan.
 - Status baterai, tegangan, arus, pompa, serta keterlambatan data sensor.
-- Grafik partikulat dengan aset Highcharts lokal, tanpa ketergantungan internet.
+- Grafik partikulat memakai Chart.js 4.5.1 berlisensi MIT, disimpan lokal.
 - Pembaruan dashboard setiap 15 detik tanpa memuat ulang halaman.
 - ISPU PM2.5 dan PM10 berdasarkan rerata bergerak 24 jam.
 - Label **ISPU Sementara** saat cakupan data belum mencapai 24 jam.
-- Endpoint ingest kompatibel dengan firmware ESP8266 lama.
+- Endpoint ingest kompatibel dengan jalur lama `/partikulat/insert.php`, dibatasi CIDR,
+  laju kirim, nama parameter, dan rentang nilai; token dapat diaktifkan.
 - Agregasi lokal lima menit dari data mentah ke data ringkasan.
+- Scheduler berjalan otomatis sebagai service dan mencegah bucket duplikat.
 - Tombol fullscreen dan tata letak responsif untuk panel lapangan.
 
 ## Arsitektur singkat
@@ -56,6 +59,8 @@ Persyaratan:
 ```bash
 git clone https://github.com/rusli3/aqms-portable.git
 cd aqms-portable
+cp .env.example .env
+# ganti kedua password contoh di .env
 docker compose up -d --build
 ```
 
@@ -74,7 +79,16 @@ Untuk menghentikan stack:
 docker compose down
 ```
 
-Tambahkan `-v` hanya jika volume database uji memang boleh dihapus.
+Data tetap tersimpan pada named volume. Jangan menambahkan `-v` kecuali seluruh
+database memang sengaja akan dihapus dan backup sudah diverifikasi.
+
+Produksi menggunakan override yang mewajibkan kredensial dan allowlist sensor:
+
+```bash
+cp .env.example .env
+# edit .env, kemudian:
+docker compose -f compose.yaml -f compose.production.yaml up -d --build
+```
 
 ## Konfigurasi
 
@@ -89,13 +103,19 @@ Variabel aplikasi tersedia pada [.env.example](.env.example):
 | `AQMS_DB_PASSWORD` | Kata sandi database |
 | `AQMS_DISPLAY_NAME` | Nama unit pada dashboard |
 | `AQMS_TIMEZONE` | Zona waktu aplikasi |
+| `AQMS_HTTP_BIND` / `AQMS_HTTP_PORT` | Alamat dan port publik web |
+| `AQMS_INGEST_ALLOWED_CIDRS` | IP/CIDR yang boleh mengirim data |
+| `AQMS_INGEST_TOKEN` | Token opsional bila firmware mendukungnya |
+| `AQMS_INGEST_MIN_INTERVAL_SECONDS` | Jarak minimum antarpaket |
 
-Nilai pada `compose.yaml` hanya untuk pengujian lokal. Gunakan secret yang unik
-dan batasi akses jaringan sebelum pemasangan lapangan.
+Compose menolak start bila kedua password belum diisi. Gunakan secret yang unik
+dan batasi akses jaringan sebelum pemasangan lapangan; jangan memakai nilai
+placeholder dari `.env.example`.
 
 ## Protokol sensor
 
-Firmware lama mengirim HTTP GET ke `/insert.php` dengan parameter numerik:
+Firmware lama dapat mengirim HTTP GET ke `/insert.php` atau jalur kompatibilitas
+`/partikulat/insert.php` dengan parameter numerik:
 
 ```text
 pm1, pm25, pm10, temp, humd, ampere, baterai, pompa, volt, press
@@ -107,28 +127,28 @@ Contoh pengujian lokal:
 curl "http://127.0.0.1:18080/insert.php?pm1=12&pm25=18&pm10=24&temp=29.5&humd=72&ampere=1.2&baterai=85&pompa=1023&volt=12.4&press=1008"
 ```
 
-Respons berhasil adalah `received`. Paket yang tidak lengkap atau bukan angka
-menghasilkan HTTP `400`.
+Respons berhasil adalah `received`. Paket invalid ditolak dengan HTTP `400/422`,
+sumber di luar allowlist dengan `403`, dan paket terlalu cepat dengan `429`.
 
 ## Scheduler
 
-Scheduler menghitung rata-rata sampel pada lima menit terakhir dan menulisnya
-ke `coretb`:
+Service `scheduler` menghitung rata-rata bucket lima menit lengkap dan menulisnya
+ke `coretb` secara idempoten. Eksekusi manual untuk diagnosis:
 
 ```bash
 docker compose exec web php /var/www/html/scheduler/main.php
 ```
 
-Pada perangkat lapangan, jalankan perintah tersebut setiap lima menit melalui
-cron atau systemd timer. Scheduler hanya bekerja lokal dan tidak mengirim data
-ke cloud.
+Tidak diperlukan cron host. Scheduler hanya bekerja lokal dan tidak mengirim
+data ke cloud.
 
 ## ISPU
 
 Perhitungan menggunakan interpolasi breakpoint PM2.5 dan PM10 pada Permen LHK
 P.14/2020. Konsentrasi yang digunakan adalah rerata data hingga 24 jam terakhir.
-Jika rentang yang tersedia kurang dari 23 jam, hasil ditandai sebagai sementara
-dan dashboard menampilkan jam serta jumlah sampelnya.
+Status 24 jam hanya diberikan bila rentang sedikitnya 23 jam 45 menit, tersedia
+minimal 260 dari 289 titik lima-menit, dan tidak ada jeda lebih dari 15 menit.
+Selain itu hasil ditandai sementara dan dashboard menampilkan cakupan serta jeda.
 
 Detail rumus, breakpoint, dan batas interpretasi tersedia di
 [docs/ISPU.md](docs/ISPU.md). Nilai pada dashboard adalah dukungan operasional;
@@ -142,6 +162,17 @@ data, dan ketentuan instansi berwenang.
 - [Perhitungan ISPU](docs/ISPU.md)
 - [Pemetaan perangkat keras](docs/HARDWARE.md)
 - [Keamanan](docs/SECURITY.md)
+- [Keamanan image container](docs/CONTAINER_SECURITY.md)
+
+## Backup dan pemulihan
+
+```bash
+scripts/backup.sh backups/aqms-$(date +%F).sql.gz
+scripts/restore.sh backups/aqms-2026-08-15.sql.gz --confirm-import
+```
+
+Backup tidak menimpa berkas yang sudah ada dan diverifikasi dengan `gzip -t`.
+Uji restore pada stack terpisah sebelum mengandalkannya di lapangan.
 
 ## Struktur repositori
 
@@ -154,7 +185,11 @@ data, dan ketentuan instansi berwenang.
 │   ├── insert.php       # endpoint data sensor
 │   └── scheduler/       # agregasi lokal lima menit
 ├── database/schema.sql  # skema publik tanpa data operasional
+├── scripts/             # backup dan restore terverifikasi
+├── tests/               # unit test ISPU dan integration test
 ├── docs/                # dokumentasi teknis
+├── compose.production.yaml
+├── Dockerfile.database
 ├── compose.yaml
 └── Dockerfile
 ```
@@ -167,5 +202,7 @@ disiapkan untuk mencegah dump pemulihan utama ikut terunggah.
 
 ## Lisensi
 
-Belum ada lisensi open-source yang ditetapkan. Seluruh hak tetap pada pemilik
-repositori sampai berkas lisensi ditambahkan.
+Proyek utama belum memiliki lisensi open-source. Dependensi chart adalah Chart.js
+4.5.1 berlisensi MIT; rincian dan checksum tersedia di
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), dengan salinan lisensi vendor
+di direktori aset.

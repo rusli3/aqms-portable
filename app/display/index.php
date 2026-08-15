@@ -1,193 +1,126 @@
-
-
 <?php
-ini_set('display_errors', 1);
-date_default_timezone_set('Asia/Jakarta');
-include "../konek/konek.php";
-// $link=koneksi_db();
-$waktu = date("Y-m-d H:i:s");
-$page = $_SERVER['PHP_SELF'];
-$sec = "10";
-$tgll = date('Y-m-d');
 
-function valid_date(string $value): bool
+declare(strict_types=1);
+
+require_once __DIR__ . '/../config/database.php';
+
+function aqms_valid_date(string $value): bool
 {
     $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
     return $date !== false && $date->format('Y-m-d') === $value;
 }
 
-$startDate = isset($_POST['submit']) ? (string) ($_POST['cari1'] ?? '') : $tgll;
-$endDate = isset($_POST['submit']) ? (string) ($_POST['cari2'] ?? '') : $tgll;
-$endDate = $endDate === '' ? $startDate : $endDate;
-$rows = null;
-$dateError = null;
-
-if (!valid_date($startDate) || !valid_date($endDate) || $startDate > $endDate) {
-    $dateError = 'Rentang tanggal tidak valid.';
-} else {
-    $startTime = $startDate . ' 00:00:00';
-    $endTime = $endDate . ' 23:59:59';
-    $statement = $link->prepare('SELECT * FROM coretb WHERE waktu BETWEEN ? AND ? ORDER BY waktu DESC');
+function aqms_history_statement(mysqli $database, string $startTime, string $endTime, ?int $limit = null): mysqli_stmt
+{
+    $sql = 'SELECT waktu, pm1, pm25, pm10, temp, humd, ampere, baterai, pompa, volt, press '
+        . 'FROM coretb WHERE waktu BETWEEN ? AND ? ORDER BY waktu DESC';
+    if ($limit !== null) {
+        $sql .= ' LIMIT ' . $limit;
+    }
+    $statement = $database->prepare($sql);
     $statement->bind_param('ss', $startTime, $endTime);
     $statement->execute();
-    $rows = $statement->get_result();
+    return $statement;
 }
-?>
 
+$today = date('Y-m-d');
+$startDate = (string) ($_GET['from'] ?? $today);
+$endDate = (string) ($_GET['to'] ?? $startDate);
+$dateError = null;
+$rows = null;
 
-<html lang="en">
+if (!aqms_valid_date($startDate) || !aqms_valid_date($endDate) || $startDate > $endDate) {
+    $dateError = 'Rentang tanggal tidak valid.';
+} else {
+    $start = new DateTimeImmutable($startDate);
+    $end = new DateTimeImmutable($endDate);
+    if ($start->diff($end)->days > 31) {
+        $dateError = 'Rentang tampilan maksimal 31 hari.';
+    } else {
+        $startTime = $startDate . ' 00:00:00';
+        $endTime = $endDate . ' 23:59:59';
+        $database = aqms_database();
 
-  <head>
-  <!--   <meta http-equiv="refresh" content="<?php echo $sec?>;URL='<?php echo $page?>'" charset="utf-8"> -->
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.1/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.0.0/css/buttons.dataTables.min.css">
-    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
-
-    <title>download data</title>
-  </head>
-  <body>
-    <div class="container">
-     <div class="row">
-                        <div class="col-md-6 grid-margin stretch-card">
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="form-group">
-                                        <form action="" method="post">
-                                            <label class="col-md-12">Tanggal Awal</label>
-                                            <div class="col-md-12">
-                                                <input type="date" class="form-control form-control-line" name="cari1">
-                                                <label style="font-size: 10px;"><span>*</span> Kosongkan tanggal akhir apabila hanya akan menampilkan data 1 hari</label>
-                                            </div>
-                                            <div class="col-md-12">
-                                                <button class="btn btn-success" name="submit">Select</button>
-                                            </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 grid-margin stretch-card">
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="form-group">
-                                        <label class="col-md-12">Tanggal Akhir</label>
-                                        <div class="col-md-12">
-                                            <input type="date" class="form-control form-control-line" name="cari2">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        </form>
-
-                    </div>
-                    <br>
-                    <a href="../dashboard/index.php"><button class="btn btn-primary "> <i class="fas fa-undo"></i>Back</button></a>
-                    <br>
-    <!-- <h1>Hello, world!</h1> -->
- <div class="row">
-    <div class="col-md-12 grid-margin stretch-card">
-      <div class="card">
-         <div class="card-body">
-        <p class="card-title text-md-center text-xl-left">DATA PARTIKULAT 02</p>
-
-    <table id="example" class="display" style="width:100%">
-        <thead>
-            <tr>
-                <th colspan="6" align="center"> Data Gas </th>
-            </tr>
-            <tr>
-                <th> No </th>
-               <th>waktu</th>
-                <th>pm1</th>
-                <th>pm25</th>
-                <th>pm10</th>
-                <th>temp</th>
-                <th>humd</th>
-                <th>press</th>
-
-            </tr>
-        </thead>
-        <tbody>
-
-            <?php
-            if ($dateError !== null) {
-                echo '<tr><td colspan="8">' . htmlspecialchars($dateError, ENT_QUOTES, 'UTF-8') . '</td></tr>';
-            } elseif ($rows !== null && $rows->num_rows > 0) {
-                $k = 1;
-                while ($data = $rows->fetch_assoc()) {
-            ?>
-
-            <tr>
-                <td><?php echo $k++; ?></td>
-                <td><?php echo htmlspecialchars((string) $data['waktu'], ENT_QUOTES, 'UTF-8'); ?></td>
-                <td><?php echo htmlspecialchars((string) $data['pm1'], ENT_QUOTES, 'UTF-8'); ?></td>
-                <td><?php echo htmlspecialchars((string) $data['pm25'], ENT_QUOTES, 'UTF-8'); ?></td>
-                <td><?php echo htmlspecialchars((string) $data['pm10'], ENT_QUOTES, 'UTF-8'); ?></td>
-                <td><?php echo htmlspecialchars((string) $data['temp'], ENT_QUOTES, 'UTF-8'); ?></td>
-                <td><?php echo htmlspecialchars((string) $data['humd'], ENT_QUOTES, 'UTF-8'); ?></td>
-                <td><?php echo htmlspecialchars((string) $data['press'], ENT_QUOTES, 'UTF-8'); ?></td>
-
-            </tr>
-            <?php
-                }
-            } else {
-                echo '<tr><td colspan="8">Data tidak tersedia pada rentang tersebut.</td></tr>';
+        if (($_GET['format'] ?? '') === 'csv') {
+            $statement = aqms_history_statement($database, $startTime, $endTime);
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="aqms-' . $startDate . '-' . $endDate . '.csv"');
+            header('Cache-Control: no-store, max-age=0');
+            $output = fopen('php://output', 'wb');
+            fputcsv($output, ['waktu', 'pm1', 'pm25', 'pm10', 'temp', 'humd', 'ampere', 'baterai', 'pompa', 'volt', 'press']);
+            $result = $statement->get_result();
+            while ($row = $result->fetch_assoc()) {
+                fputcsv($output, array_values($row));
             }
-            ?>
-          </tbody>
-        </table>
-</div>
-</div>
-</div>
-</div>
-</div>
+            fclose($output);
+            exit;
+        }
 
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-  </body>
+        $rows = aqms_history_statement($database, $startTime, $endTime, 1000)->get_result();
+    }
+}
+
+$pageTitle = htmlspecialchars((string) aqms_env('AQMS_DISPLAY_NAME', 'PARTIKULAT 02'), ENT_QUOTES, 'UTF-8');
+$query = http_build_query(['from' => $startDate, 'to' => $endDate, 'format' => 'csv']);
+?>
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#07110f">
+    <title>Riwayat — <?= $pageTitle ?></title>
+    <link rel="stylesheet" href="display.css">
+</head>
+<body>
+    <main class="history-shell">
+        <header class="history-header">
+            <div>
+                <span class="eyebrow">ARSIP LOKAL AQMS</span>
+                <h1>Riwayat partikulat</h1>
+                <p><?= $pageTitle ?> · data agregat lima menit</p>
+            </div>
+            <a class="back-link" href="../dashboard/">Kembali ke monitor</a>
+        </header>
+
+        <section class="filter-panel" aria-label="Filter riwayat">
+            <form method="get">
+                <label>Dari<input type="date" name="from" value="<?= htmlspecialchars($startDate, ENT_QUOTES, 'UTF-8') ?>" required></label>
+                <label>Sampai<input type="date" name="to" value="<?= htmlspecialchars($endDate, ENT_QUOTES, 'UTF-8') ?>" required></label>
+                <button type="submit">Tampilkan</button>
+                <?php if ($dateError === null): ?>
+                    <a class="export-link" href="?<?= htmlspecialchars($query, ENT_QUOTES, 'UTF-8') ?>">Unduh CSV</a>
+                <?php endif; ?>
+            </form>
+            <p>Maksimal 31 hari per tampilan; tabel dibatasi 1.000 baris. CSV memuat seluruh baris dalam rentang.</p>
+        </section>
+
+        <section class="table-panel">
+            <?php if ($dateError !== null): ?>
+                <div class="notice is-error"><?= htmlspecialchars($dateError, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php elseif ($rows === null || $rows->num_rows === 0): ?>
+                <div class="notice">Tidak ada data pada rentang ini.</div>
+            <?php else: ?>
+                <div class="table-scroll">
+                    <table>
+                        <thead><tr><th>Waktu</th><th>PM1</th><th>PM2.5</th><th>PM10</th><th>Suhu</th><th>RH</th><th>Tekanan</th></tr></thead>
+                        <tbody>
+                        <?php while ($row = $rows->fetch_assoc()): ?>
+                            <tr>
+                                <td><?= htmlspecialchars((string) $row['waktu'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td><?= htmlspecialchars((string) $row['pm1'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td><?= htmlspecialchars((string) $row['pm25'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td><?= htmlspecialchars((string) $row['pm10'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td><?= htmlspecialchars((string) $row['temp'], ENT_QUOTES, 'UTF-8') ?> °C</td>
+                                <td><?= htmlspecialchars((string) $row['humd'], ENT_QUOTES, 'UTF-8') ?>%</td>
+                                <td><?= htmlspecialchars((string) $row['press'], ENT_QUOTES, 'UTF-8') ?> hPa</td>
+                            </tr>
+                        <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </section>
+    </main>
+</body>
 </html>
-
-<script type="text/javascript">
-  $(document).ready(function() {
-    $('#example').DataTable( {
-        dom: 'Bfrtip',
-        // buttons: [
-        //     'copyHtml5',
-        //     'excelHtml5',
-        //     'csvHtml5',
-        //     'pdfHtml5'
-        // ]
-         buttons: [{
-                    extend: 'excel',
-                    title: 'LAPORAN PARTIKULAT01'
-                },
-                {
-                    extend: 'pdfHtml5',
-                    orientation: 'potrait',
-                    pageSize: 'A5',
-                    download: 'open',
-                    title: 'LAPORAN PARTIKULAT01'
-                }
-            ]
-    } );
-} );
-</script>
-
-<script src="https://code.jquery.com/jquery-3.5.1.js"> </script>
-<script src="https://cdn.datatables.net/1.11.1/js/jquery.dataTables.min.js"> </script>
-<script src="https://cdn.datatables.net/buttons/2.0.0/js/dataTables.buttons.min.js"> </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"> </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"> </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js
-"> </script>
-<script src="https://cdn.datatables.net/buttons/2.0.0/js/buttons.html5.min.js"> </script>

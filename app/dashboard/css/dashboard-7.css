@@ -34,6 +34,7 @@ body::before {
 button, a { font: inherit; }
 
 .dashboard-shell {
+  height: 100vh;
   height: 100svh;
   min-height: 440px;
   padding: 10px 12px 7px;
@@ -128,7 +129,8 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
 .legend-dot.pm1 { background: var(--cyan); }
 .legend-dot.pm25 { background: var(--green); }
 .legend-dot.pm10 { background: var(--amber); }
-#particleChart { height: calc(100% - 29px); min-height: 150px; }
+.chart-frame { position: relative; height: calc(100% - 29px); min-height: 150px; }
+#particleChart { width: 100% !important; height: 100% !important; }
 
 .side-panel { min-height: 0; display: grid; grid-template-rows: minmax(100px, .82fr) minmax(166px, 1.35fr) 60px 42px; gap: 8px; }
 .environment-grid { min-height: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
@@ -211,7 +213,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
 
 @media (max-width: 700px) {
   body { overflow: auto; }
-  .dashboard-shell { height: auto; min-height: 100svh; grid-template-rows: 48px auto 18px; }
+  .dashboard-shell { height: auto; min-height: 100vh; min-height: 100svh; grid-template-rows: 48px auto 18px; }
   .dashboard-grid { grid-template-columns: 1fr; }
   .main-panel { min-height: 440px; }
   .side-panel { min-height: 390px; }
