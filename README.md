@@ -159,6 +159,7 @@ data, dan ketentuan instansi berwenang.
 
 - [Arsitektur dan alur data](docs/ARCHITECTURE.md)
 - [Pemasangan dan migrasi Beelink](docs/DEPLOYMENT.md)
+- [Panduan restore pada Ubuntu Server 24.04 LTS](docs/RESTORE-UBUNTU-24.04.md)
 - [Perhitungan ISPU](docs/ISPU.md)
 - [Pemetaan perangkat keras](docs/HARDWARE.md)
 - [Keamanan](docs/SECURITY.md)
