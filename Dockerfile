@@ -1,4 +1,4 @@
-FROM php:8.3.32-apache-bookworm@sha256:ff23b916a51fb99b2a2afddb8649d1b96e15337f6b15fb0ce5179a950c00aae2
+FROM php:8.5.9-apache-bookworm@sha256:68e1de9a82af09f1b0ae70611bd64a8702069ac1e036bdc5a12eb48e1a5cab2b
 
 RUN docker-php-ext-install mysqli \
     && a2enmod headers
