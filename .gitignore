@@ -1,0 +1,27 @@
+.env
+.DS_Store
+
+# Operational or recovered data must never be published.
+database/partikulat-database.sql
+app/partikulat.sql
+*.sql.gz
+*.tar.gz
+
+# Legacy dashboard assets retained only in the private recovery workspace.
+app/dashboard/bootstrap/
+app/dashboard/images/
+app/dashboard/node_modules/
+app/dashboard/data.php
+app/dashboard/css/bootstrap.css
+app/dashboard/css/custom.css
+app/dashboard/css/font-style.css
+app/dashboard/css/main.css
+app/dashboard/css/night.css
+app/dashboard/js/chartgas.js
+app/dashboard/js/chartmeteo.js
+app/dashboard/js/custom.js
+app/dashboard/js/highchart/accessibility.js
+app/dashboard/js/highchart/export-data.js
+app/dashboard/js/highchart/exporting.js
+app/dashboard/js/highchart/high-contrast-light.js
+app/dashboard/js/highchart/series-label.js
