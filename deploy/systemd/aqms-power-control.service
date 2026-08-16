@@ -1,0 +1,19 @@
+[Unit]
+Description=AQMS restricted reboot and shutdown broker
+Documentation=https://github.com/rusli3/aqms-portable
+ConditionPathExists=/run/aqms-control/request
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=/usr/local/libexec/aqms-power-control
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/run/aqms-control
+RestrictAddressFamilies=AF_UNIX
+LockPersonality=yes
+MemoryDenyWriteExecute=yes

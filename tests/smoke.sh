@@ -36,6 +36,10 @@ grep -qi '^content-security-policy:' <<<"$headers"
 ! grep -qi '^x-powered-by:' <<<"$headers"
 ! grep -Eqi '^server:.*[0-9]' <<<"$headers"
 curl -fsS "${base_url}/dashboard/" | grep -q 'chart.umd.min.js'
+curl -fsS "${base_url}/dashboard/" | grep -q 'id="powerMenuButton"'
+[[ "$(curl -sS -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 405 ]]
+[[ "$(curl -sS -H 'Content-Type: application/json' -d '{"action":"reboot","pin":"0000"}' \
+  -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 503 ]]
 ! curl -fsS "${base_url}/display/" | grep -Eq 'https?://|jquery|DataTable'
 
 docker compose exec -T database sh -c 'exec mysql -uaqms -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' <<'SQL'

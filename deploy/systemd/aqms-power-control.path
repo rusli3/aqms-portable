@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch for authenticated AQMS power requests
+Documentation=https://github.com/rusli3/aqms-portable
+
+[Path]
+PathExists=/run/aqms-control/request
+Unit=aqms-power-control.service
+
+[Install]
+WantedBy=multi-user.target

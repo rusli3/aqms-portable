@@ -4,6 +4,9 @@
   var chart = null;
   var refreshTimer = null;
   var elements = {};
+  var powerAction = '';
+  var powerPin = '';
+  var powerBusy = false;
 
   function byId(id) { return document.getElementById(id); }
 
@@ -219,6 +222,105 @@
     }
   }
 
+  function powerActionLabel() {
+    return powerAction === 'reboot' ? 'Mulai ulang' : 'Matikan unit';
+  }
+
+  function updatePowerPanel() {
+    var enabled = elements.powerModal.dataset.enabled === 'true';
+    var validPin = powerPin.length >= 4 && powerPin.length <= 8;
+    var dots = '';
+    var index;
+
+    for (index = 0; index < powerPin.length; index += 1) dots += '<i></i>';
+    elements.pinDots.innerHTML = dots || '<span>— — — —</span>';
+    elements.pinDots.setAttribute('aria-label', powerPin.length
+      ? powerPin.length + ' digit PIN telah diisi'
+      : 'PIN belum diisi');
+
+    elements.powerActions.forEach(function (button) {
+      button.classList.toggle('is-selected', button.dataset.powerAction === powerAction);
+      button.disabled = powerBusy || !enabled;
+    });
+    elements.pinKeys.forEach(function (button) { button.disabled = powerBusy || !enabled; });
+    elements.powerConfirm.disabled = powerBusy || !enabled || !powerAction || !validPin;
+    elements.powerConfirm.classList.toggle('is-danger', powerAction === 'shutdown');
+    setText(elements.powerConfirm, powerBusy ? 'Memproses…' : (powerAction ? 'Konfirmasi ' + powerActionLabel() : 'Konfirmasi'));
+
+    if (!enabled) {
+      setText(elements.powerStatus, 'Kontrol daya belum diaktifkan oleh administrator.');
+    } else if (!powerBusy && powerAction && !validPin) {
+      setText(elements.powerStatus, 'Masukkan 4–8 digit PIN untuk ' + powerActionLabel().toLowerCase() + '.');
+    }
+  }
+
+  function resetPowerPanel() {
+    powerAction = '';
+    powerPin = '';
+    powerBusy = false;
+    setText(elements.powerStatus, 'Pilih tindakan dan masukkan 4–8 digit PIN.');
+    updatePowerPanel();
+  }
+
+  function openPowerPanel() {
+    resetPowerPanel();
+    elements.powerModal.classList.add('is-open');
+    elements.powerModal.setAttribute('aria-hidden', 'false');
+    elements.powerClose.focus();
+  }
+
+  function closePowerPanel() {
+    if (powerBusy) return;
+    elements.powerModal.classList.remove('is-open');
+    elements.powerModal.setAttribute('aria-hidden', 'true');
+    resetPowerPanel();
+    elements.powerMenu.focus();
+  }
+
+  function submitPowerRequest() {
+    if (powerBusy || !powerAction || powerPin.length < 4) return;
+    powerBusy = true;
+    setText(elements.powerStatus, 'Memverifikasi PIN dan mengirim perintah…');
+    updatePowerPanel();
+
+    fetch('../admin/power.php', {
+      method: 'POST',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-AQMS-CSRF': elements.powerModal.dataset.csrf
+      },
+      body: JSON.stringify({ action: powerAction, pin: powerPin })
+    })
+      .then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (body) {
+          if (!response.ok) throw new Error(body.message || 'Perintah ditolak.');
+          return body;
+        });
+      })
+      .then(function (body) {
+        setText(elements.powerStatus, body.message + ' Tunggu hingga layar berubah.');
+        elements.powerConfirm.classList.add('is-accepted');
+        setText(elements.powerConfirm, 'Perintah diterima');
+      })
+      .catch(function (error) {
+        powerBusy = false;
+        powerPin = '';
+        elements.powerConfirm.classList.remove('is-accepted');
+        updatePowerPanel();
+        setText(elements.powerStatus, error.message || 'Kontrol daya gagal.');
+      });
+  }
+
+  function handlePinKey(key) {
+    if (powerBusy) return;
+    if (key === 'clear') powerPin = '';
+    else if (key === 'backspace') powerPin = powerPin.slice(0, -1);
+    else if (/^[0-9]$/.test(key) && powerPin.length < 8) powerPin += key;
+    updatePowerPanel();
+  }
+
   function cacheElements() {
     elements = {
       pm1: byId('pm1Value'), pm25: byId('pm25Value'), pm10: byId('pm10Value'),
@@ -232,7 +334,12 @@
       batteryFill: byId('batteryFill'), systemBadge: byId('systemBadge'), lastReading: byId('lastReadingTime'),
       sensorLink: byId('sensorLink'), sensorLinkText: byId('sensorLinkText'), clock: byId('liveClock'),
       date: byId('liveDate'), refresh: byId('refreshButton'), updateMessage: byId('updateMessage'),
-      fullscreen: byId('fullscreenButton'), chart: byId('particleChart')
+      fullscreen: byId('fullscreenButton'), chart: byId('particleChart'),
+      powerMenu: byId('powerMenuButton'), powerModal: byId('powerModal'),
+      powerClose: byId('powerCloseButton'), powerStatus: byId('powerStatus'),
+      powerConfirm: byId('powerConfirmButton'), pinDots: byId('pinDots'),
+      powerActions: Array.prototype.slice.call(document.querySelectorAll('[data-power-action]')),
+      pinKeys: Array.prototype.slice.call(document.querySelectorAll('[data-pin-key]'))
     };
   }
 
@@ -244,6 +351,29 @@
     fetchData(false);
     elements.refresh.addEventListener('click', function () { fetchData(true); });
     elements.fullscreen.addEventListener('click', toggleFullscreen);
+    elements.powerMenu.addEventListener('click', openPowerPanel);
+    elements.powerClose.addEventListener('click', closePowerPanel);
+    elements.powerModal.addEventListener('click', function (event) {
+      if (event.target === elements.powerModal) closePowerPanel();
+    });
+    elements.powerActions.forEach(function (button) {
+      button.addEventListener('click', function () {
+        powerAction = button.dataset.powerAction;
+        setText(elements.powerStatus, 'Masukkan PIN untuk ' + powerActionLabel().toLowerCase() + '.');
+        updatePowerPanel();
+      });
+    });
+    elements.pinKeys.forEach(function (button) {
+      button.addEventListener('click', function () { handlePinKey(button.dataset.pinKey); });
+    });
+    elements.powerConfirm.addEventListener('click', submitPowerRequest);
+    document.addEventListener('keydown', function (event) {
+      if (!elements.powerModal.classList.contains('is-open')) return;
+      if (event.key === 'Escape') closePowerPanel();
+      else if (event.key === 'Backspace') handlePinKey('backspace');
+      else if (/^[0-9]$/.test(event.key)) handlePinKey(event.key);
+      else if (event.key === 'Enter') submitPowerRequest();
+    });
     refreshTimer = window.setInterval(function () { fetchData(false); }, 15000);
     window.addEventListener('beforeunload', function () {
       if (refreshTimer) window.clearInterval(refreshTimer);

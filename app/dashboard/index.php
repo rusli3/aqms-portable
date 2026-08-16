@@ -5,6 +5,25 @@ declare(strict_types=1);
 require_once __DIR__ . '/../config/database.php';
 
 date_default_timezone_set(aqms_env('AQMS_TIMEZONE', 'Asia/Jakarta'));
+$powerControlsEnabled = in_array(
+    strtolower((string) aqms_env('AQMS_POWER_CONTROLS_ENABLED', 'false')),
+    ['1', 'true', 'yes', 'on'],
+    true
+) && aqms_env('AQMS_ADMIN_PIN_HASH') !== null;
+
+session_name('AQMSCONTROL');
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'httponly' => true,
+    'samesite' => 'Strict',
+]);
+session_start();
+if (!isset($_SESSION['power_csrf']) || !is_string($_SESSION['power_csrf'])) {
+    $_SESSION['power_csrf'] = bin2hex(random_bytes(24));
+}
+
+$powerCsrf = htmlspecialchars($_SESSION['power_csrf'], ENT_QUOTES, 'UTF-8');
 $pageTitle = htmlspecialchars((string) aqms_env('AQMS_DISPLAY_NAME', 'PARTIKULAT 02'), ENT_QUOTES, 'UTF-8');
 ?>
 <!doctype html>
@@ -38,6 +57,9 @@ $pageTitle = htmlspecialchars((string) aqms_env('AQMS_DISPLAY_NAME', 'PARTIKULAT
                 </div>
                 <button class="icon-button" id="fullscreenButton" type="button" aria-label="Tampilkan layar penuh" title="Layar penuh">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
+                </button>
+                <button class="icon-button power-menu-button" id="powerMenuButton" type="button" aria-label="Buka menu daya" title="Menu daya">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9"/><path d="M6.7 6.7a7.5 7.5 0 1 0 10.6 0"/></svg>
                 </button>
             </div>
         </header>
@@ -174,6 +196,70 @@ $pageTitle = htmlspecialchars((string) aqms_env('AQMS_DISPLAY_NAME', 'PARTIKULAT
             <a href="https://github.com/rusli3/" target="_blank" rel="noopener noreferrer">UNIT PORTABEL / AQMS</a>
         </footer>
     </main>
+
+    <div
+        class="power-modal"
+        id="powerModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="powerDialogTitle"
+        aria-hidden="true"
+        data-enabled="<?= $powerControlsEnabled ? 'true' : 'false' ?>"
+        data-csrf="<?= $powerCsrf ?>"
+    >
+        <div class="power-dialog">
+            <div class="power-dialog-head">
+                <div>
+                    <span class="eyebrow">KONTROL ADMINISTRATOR</span>
+                    <h2 id="powerDialogTitle">Daya unit AQMS</h2>
+                </div>
+                <button class="power-close" id="powerCloseButton" type="button" aria-label="Tutup menu daya">&times;</button>
+            </div>
+
+            <p class="power-warning">Pilih tindakan, masukkan PIN, lalu konfirmasi. Akuisisi data akan berhenti sementara.</p>
+
+            <div class="power-actions" role="group" aria-label="Pilih tindakan daya">
+                <button class="power-action" type="button" data-power-action="reboot">
+                    <span class="power-action-icon reboot" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M20 6v5h-5"/><path d="M18.5 9A7 7 0 1 0 19 15"/></svg>
+                    </span>
+                    <span><strong>Mulai ulang</strong><small>Reboot sistem dengan aman</small></span>
+                </button>
+                <button class="power-action danger" type="button" data-power-action="shutdown">
+                    <span class="power-action-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6.7 6.7a7.5 7.5 0 1 0 10.6 0"/></svg>
+                    </span>
+                    <span><strong>Matikan unit</strong><small>Shutdown sebelum melepas daya</small></span>
+                </button>
+            </div>
+
+            <div class="pin-panel">
+                <div class="pin-heading">
+                    <span>PIN ADMIN</span>
+                    <div class="pin-dots" id="pinDots" aria-label="PIN belum diisi"></div>
+                </div>
+                <div class="pin-keypad" id="pinKeypad" aria-label="Keypad PIN">
+                    <button type="button" data-pin-key="1">1</button>
+                    <button type="button" data-pin-key="2">2</button>
+                    <button type="button" data-pin-key="3">3</button>
+                    <button type="button" data-pin-key="4">4</button>
+                    <button type="button" data-pin-key="5">5</button>
+                    <button type="button" data-pin-key="6">6</button>
+                    <button type="button" data-pin-key="7">7</button>
+                    <button type="button" data-pin-key="8">8</button>
+                    <button type="button" data-pin-key="9">9</button>
+                    <button type="button" data-pin-key="clear" aria-label="Hapus seluruh PIN">C</button>
+                    <button type="button" data-pin-key="0">0</button>
+                    <button type="button" data-pin-key="backspace" aria-label="Hapus angka terakhir">&#9003;</button>
+                </div>
+            </div>
+
+            <div class="power-dialog-foot">
+                <p id="powerStatus" role="status">Pilih tindakan dan masukkan 4–8 digit PIN.</p>
+                <button class="power-confirm" id="powerConfirmButton" type="button" disabled>Konfirmasi</button>
+            </div>
+        </div>
+    </div>
 
     <script src="js/vendor/chart.js/chart.umd.min.js"></script>
     <script src="js/dashboard-7.js"></script>

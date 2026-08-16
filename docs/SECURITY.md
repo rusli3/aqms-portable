@@ -12,6 +12,9 @@
 - Dashboard dan ekspor CSV tidak memerlukan CDN atau koneksi internet.
 - Named volume, backup terverifikasi, healthcheck, restart policy, dan CI tersedia.
 - Sinkronisasi cloud SenseSync tidak ada dalam aplikasi modern.
+- Kontrol daya dinonaktifkan secara default; bila diaktifkan, PIN menggunakan
+  password hash, token sesi, rate limit, dan broker systemd dengan daftar aksi
+  tetap. Container tidak mendapat Docker socket atau D-Bus host.
 
 CSP tidak mengizinkan script inline. `style-src` mengizinkan inline style karena
 Chart.js dan indikator baterai/ISPU mengubah dimensi atau warna langsung pada
@@ -27,6 +30,9 @@ elemen; tidak ada nilai style yang berasal dari input pengguna.
    internet dan jangan memasang phpMyAdmin.
 5. Simpan backup di media lain, uji restore, dan pantau respons 403/422/429.
 6. Tinjau Dependabot dan scan image sebelum setiap deployment.
+7. Bila menu daya dipakai, pasang broker melalui panduan
+   `docs/POWER-CONTROL.md`, gunakan PIN minimal enam digit, dan jangan membuka
+   dashboard ke internet.
 
 ## Batas yang tetap berlaku
 

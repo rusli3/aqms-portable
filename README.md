@@ -33,6 +33,8 @@ lebih aman dan mudah dipulihkan.
 - Agregasi lokal lima menit dari data mentah ke data ringkasan.
 - Scheduler berjalan otomatis sebagai service dan mencegah bucket duplikat.
 - Tombol fullscreen dan tata letak responsif untuk panel lapangan.
+- Menu reboot/shutdown dengan keypad PIN, pembatasan percobaan, token sesi, dan
+  broker systemd host yang hanya menerima dua tindakan daya terverifikasi.
 
 ## Arsitektur singkat
 
@@ -167,6 +169,7 @@ data, dan ketentuan instansi berwenang.
 - [Pemetaan perangkat keras](docs/HARDWARE.md)
 - [Keamanan](docs/SECURITY.md)
 - [Keamanan image container](docs/CONTAINER_SECURITY.md)
+- [Kontrol reboot dan shutdown](docs/POWER-CONTROL.md)
 
 ## Backup dan pemulihan
 

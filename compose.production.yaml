@@ -12,6 +12,10 @@ services:
       AQMS_DB_PASSWORD: ${AQMS_DB_PASSWORD:?set AQMS_DB_PASSWORD in .env}
       AQMS_DB_NAME: ${AQMS_DB_NAME:?set AQMS_DB_NAME in .env}
       AQMS_INGEST_ALLOWED_CIDRS: ${AQMS_INGEST_ALLOWED_CIDRS:?set sensor IP or CIDR in .env}
+      AQMS_POWER_CONTROLS_ENABLED: ${AQMS_POWER_CONTROLS_ENABLED:-false}
+      AQMS_ADMIN_PIN_HASH: ${AQMS_ADMIN_PIN_HASH:-}
+    volumes:
+      - ${AQMS_CONTROL_DIR:-/run/aqms-control}:/run/aqms-control
   scheduler:
     environment:
       AQMS_DB_USER: ${AQMS_DB_USER:?set AQMS_DB_USER in .env}

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+request_file="${AQMS_CONTROL_REQUEST_PATH:-/run/aqms-control/request}"
+
+reject_request() {
+    logger -t aqms-power-control -- "rejected invalid power request"
+    rm -f -- "$request_file"
+    exit 1
+}
+
+[[ -f "$request_file" && ! -L "$request_file" ]] || reject_request
+
+version=""
+action=""
+requested_at=""
+nonce=""
+extra=""
+IFS=' ' read -r version action requested_at nonce extra < "$request_file" || reject_request
+
+# Hapus permintaan sebelum melakukan tindakan agar tidak dieksekusi ulang.
+rm -f -- "$request_file"
+
+[[ "$version" == "v1" ]] || reject_request
+[[ "$action" == "reboot" || "$action" == "shutdown" ]] || reject_request
+[[ "$requested_at" =~ ^[0-9]{10}$ ]] || reject_request
+[[ "$nonce" =~ ^[0-9a-f]{32}$ ]] || reject_request
+[[ -z "$extra" ]] || reject_request
+
+now="$(date +%s)"
+age=$((now - requested_at))
+(( age >= -5 && age <= 30 )) || reject_request
+
+logger -t aqms-power-control -- "accepted action=$action age=${age}s"
+
+if [[ "${AQMS_POWER_CONTROL_DRY_RUN:-0}" == "1" ]]; then
+    printf '%s\n' "$action"
+    exit 0
+fi
+
+sleep 2
+
+if [[ "$action" == "reboot" ]]; then
+    exec /usr/bin/systemctl --no-block reboot
+fi
+
+exec /usr/bin/systemctl --no-block poweroff
