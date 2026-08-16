@@ -25,6 +25,11 @@ if (!isset($_SESSION['power_csrf']) || !is_string($_SESSION['power_csrf'])) {
 
 $powerCsrf = htmlspecialchars($_SESSION['power_csrf'], ENT_QUOTES, 'UTF-8');
 $pageTitle = htmlspecialchars((string) aqms_env('AQMS_DISPLAY_NAME', 'PARTIKULAT 02'), ENT_QUOTES, 'UTF-8');
+$organizationName = htmlspecialchars(
+    (string) aqms_env('AQMS_ORGANIZATION_NAME', 'DINAS LINGKUNGAN HIDUP KABUPATEN SANGGAU'),
+    ENT_QUOTES,
+    'UTF-8'
+);
 ?>
 <!doctype html>
 <html lang="id">
@@ -42,7 +47,10 @@ $pageTitle = htmlspecialchars((string) aqms_env('AQMS_DISPLAY_NAME', 'PARTIKULAT
                 <div class="brand-mark" aria-hidden="true">AQ</div>
                 <div class="brand-copy">
                     <span class="eyebrow">AIR QUALITY MONITORING</span>
-                    <h1><?= $pageTitle ?></h1>
+                    <div class="brand-identity">
+                        <h1><?= $pageTitle ?></h1>
+                        <span class="organization-name"><?= $organizationName ?></span>
+                    </div>
                 </div>
             </div>
 

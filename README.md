@@ -107,6 +107,7 @@ Variabel aplikasi tersedia pada [.env.example](.env.example):
 | `AQMS_DB_USER` | Pengguna database |
 | `AQMS_DB_PASSWORD` | Kata sandi database |
 | `AQMS_DISPLAY_NAME` | Nama unit pada dashboard |
+| `AQMS_ORGANIZATION_NAME` | Nama instansi pada header dashboard |
 | `AQMS_TIMEZONE` | Zona waktu aplikasi |
 | `AQMS_HTTP_BIND` / `AQMS_HTTP_PORT` | Alamat dan port publik web |
 | `AQMS_INGEST_ALLOWED_CIDRS` | IP/CIDR yang boleh mengirim data |

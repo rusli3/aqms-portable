@@ -37,6 +37,7 @@ grep -qi '^content-security-policy:' <<<"$headers"
 ! grep -Eqi '^server:.*[0-9]' <<<"$headers"
 curl -fsS "${base_url}/dashboard/" | grep -q 'chart.umd.min.js'
 curl -fsS "${base_url}/dashboard/" | grep -q 'id="powerMenuButton"'
+curl -fsS "${base_url}/dashboard/" | grep -q 'DINAS LINGKUNGAN HIDUP KABUPATEN SANGGAU'
 [[ "$(curl -sS -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 405 ]]
 [[ "$(curl -sS -H 'Content-Type: application/json' -d '{"action":"reboot","pin":"0000"}' \
   -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 503 ]]

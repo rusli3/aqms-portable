@@ -65,8 +65,10 @@ button, a { font: inherit; }
 
 .brand-copy { min-width: 0; }
 .eyebrow { color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .15em; }
+.brand-identity { min-width: 0; display: flex; align-items: baseline; gap: 9px; }
 .brand-copy h1, .section-heading h2 { margin: 2px 0 0; line-height: 1; }
-.brand-copy h1 { overflow: hidden; max-width: 46vw; font-size: clamp(15px, 2.1vw, 21px); white-space: nowrap; text-overflow: ellipsis; letter-spacing: .02em; }
+.brand-copy h1 { overflow: hidden; max-width: 25vw; flex: 0 1 auto; font-size: clamp(15px, 2.1vw, 21px); white-space: nowrap; text-overflow: ellipsis; letter-spacing: .02em; }
+.organization-name { overflow: hidden; max-width: 34vw; padding-left: 9px; border-left: 1px solid rgba(152,240,106,.32); color: #a9bbb5; font-size: 8px; font-weight: 800; line-height: 1.1; letter-spacing: .08em; white-space: nowrap; text-overflow: ellipsis; }
 .topbar-status { gap: 14px; }
 .sensor-link { gap: 7px; color: var(--muted); font-size: 11px; font-weight: 800; text-transform: uppercase; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 3px rgba(242,184,75,.13); }
@@ -296,6 +298,9 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
   .main-panel { grid-template-rows: minmax(120px, .86fr) minmax(170px, 1.14fr); }
   .side-panel { grid-template-rows: minmax(92px, .8fr) minmax(145px, 1.25fr) 54px 36px; gap: 6px; }
   .brand-mark { width: 34px; height: 34px; font-size: 15px; }
+  .brand-identity { gap: 6px; }
+  .brand-copy h1 { max-width: 23vw; }
+  .organization-name { max-width: 39vw; padding-left: 6px; font-size: 7px; letter-spacing: .055em; }
   .sensor-link { display: none; }
   .clock-block strong { font-size: 18px; }
   .icon-button { width: 37px; height: 37px; }
