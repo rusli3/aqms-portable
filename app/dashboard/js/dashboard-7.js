@@ -24,6 +24,12 @@
     return new Date(String(value).replace(' ', 'T'));
   }
 
+  function formatTime(value, includeSeconds) {
+    var options = { hour: '2-digit', minute: '2-digit' };
+    if (includeSeconds) options.second = '2-digit';
+    return value.toLocaleTimeString('id-ID', options).replace(/\./g, ':');
+  }
+
   function ispuColor(index) {
     if (index <= 50) return '#98f06a';
     if (index <= 100) return '#f2d34b';
@@ -119,7 +125,7 @@
     return (history || []).map(function (row) {
       var time = dateFromDatabase(row.time);
       return time && !isNaN(time.getTime())
-        ? time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':')
+        ? formatTime(time, false)
         : '--:--';
     });
   }
@@ -200,7 +206,7 @@
       })
       .then(function (payload) {
         render(payload);
-        setText(elements.updateMessage, 'Diperbarui ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        setText(elements.updateMessage, 'Diperbarui ' + formatTime(new Date(), true));
       })
       .catch(function () {
         setText(elements.updateMessage, 'Gagal memperbarui — mencoba kembali');
@@ -210,7 +216,7 @@
 
   function updateClock() {
     var now = new Date();
-    setText(elements.clock, now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':'));
+    setText(elements.clock, formatTime(now, false));
     setText(elements.date, now.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: 'short' }));
   }
 
