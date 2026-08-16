@@ -56,6 +56,45 @@ Checklist:
 - nilai pompa dan daya masuk akal;
 - tidak ada permintaan keluar menuju cloud SenseSync.
 
+## Pisahkan jaringan sensor dari jalur internet
+
+Jika Beelink memakai Ethernet untuk administrasi/internet dan Wi-Fi khusus untuk
+sensor, jadikan Wi-Fi sebagai jaringan lokal saja. Jangan memberikan gateway,
+DNS, default route, atau IPv6 pada profil Wi-Fi sensor. Ini mencegah router atau
+modem sensor mengambil alih DNS dan HTTPS host.
+
+Contoh dengan NetworkManager; ganti nama profil dan alamat sesuai inventaris
+lokal:
+
+```bash
+sudo nmcli connection modify NAMA_PROFIL_SENSOR \
+  ipv4.method manual \
+  ipv4.addresses "ALAMAT_BEELINK/SUBNET" \
+  ipv4.gateway "" \
+  ipv4.dns "" \
+  ipv4.ignore-auto-dns yes \
+  ipv4.never-default yes \
+  ipv6.method disabled \
+  connection.autoconnect yes
+
+sudo nmcli connection down NAMA_PROFIL_SENSOR
+sudo nmcli connection up NAMA_PROFIL_SENSOR
+sudo resolvectl flush-caches
+```
+
+Verifikasi bahwa hanya Ethernet yang memiliki default route, sedangkan route
+langsung menuju subnet sensor tetap tersedia:
+
+```bash
+ip -4 -br address
+ip -4 route
+resolvectl status
+curl -4 -fsSI https://api.snapcraft.io/
+sudo snap debug connectivity
+```
+
+Jangan mengatasi kesalahan sertifikat dengan menonaktifkan verifikasi TLS.
+
 ## Scheduler produksi
 
 Service `scheduler` sudah berjalan setiap lima menit dengan `restart:
@@ -73,14 +112,39 @@ sehingga restart atau eksekusi bersamaan tidak menggandakan agregat.
 
 ## Mode layar 7 inci
 
-Dashboard diuji pada 1024×600 dan 800×480. Buka URL lokal dan gunakan tombol
-fullscreen. Untuk kiosk otomatis, jalankan Chromium/Chrome dengan profil khusus:
+Dashboard diuji pada 1024×600 dan 800×480. Pada Ubuntu Server 24.04 LTS,
+deployment referensi menggunakan Ubuntu Frame dan WPE WebKit Mir Kiosk agar
+dashboard tampil otomatis pada HDMI tanpa sesi desktop pengguna:
 
 ```bash
-chromium-browser --kiosk --noerrdialogs http://127.0.0.1:18080/dashboard/
+sudo snap install ubuntu-frame
+sudo snap install wpe-webkit-mir-kiosk
+sudo snap connect wpe-webkit-mir-kiosk:wayland ubuntu-frame
+
+sudo snap set ubuntu-frame daemon=true
+sudo snap set ubuntu-frame config="cursor=null"
+sudo snap set wpe-webkit-mir-kiosk daemon=true
+sudo snap set wpe-webkit-mir-kiosk url=http://127.0.0.1/dashboard/
+
+sudo snap restart ubuntu-frame
+sudo snap restart wpe-webkit-mir-kiosk
+snap services ubuntu-frame wpe-webkit-mir-kiosk
 ```
 
-Nama executable dapat berbeda pada tiap distribusi.
+Pastikan konektor HDMI berstatus `connected` dan menyediakan mode panel sebelum
+memasang kiosk:
+
+```bash
+for connector in /sys/class/drm/card*-*; do
+  [ -f "$connector/status" ] || continue
+  echo "$connector: $(cat "$connector/status")"
+  cat "$connector/modes" 2>/dev/null || true
+done
+```
+
+Sesudah reboot, periksa kembali service kiosk, health aplikasi, koneksi sensor,
+dan pertambahan data. Orientasi foto dokumentasi tidak selalu mencerminkan
+orientasi fisik panel.
 
 ## Rollback
 

@@ -15,7 +15,10 @@ lebih aman dan mudah dipulihkan.
 - Database memakai named volume `aqms_database` dan bertahan setelah `docker compose down`.
 - Kredensial database berasal dari environment variable, bukan source code.
 - Salinan ini tidak menyertakan backup, dump operasional, atau data perangkat.
-- Instalasi Beelink lama belum diganti otomatis oleh repositori ini.
+- Migrasi referensi ke Ubuntu Server 24.04 LTS, Docker Compose, jaringan sensor
+  terisolasi, dan kiosk HDMI telah berhasil divalidasi; pemasangan tetap perlu
+  dilakukan mengikuti panduan restore karena repositori tidak mengubah host
+  secara otomatis.
 
 ## Fitur
 
