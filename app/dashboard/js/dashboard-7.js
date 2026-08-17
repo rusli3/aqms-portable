@@ -45,6 +45,20 @@
     if (element) element.textContent = value;
   }
 
+  function apiError(response, body, fallback) {
+    var error = new Error(body.message || fallback);
+    error.code = body.code || '';
+    error.status = response.status;
+    return error;
+  }
+
+  function reloadInvalidSession(error, statusElement) {
+    if (!error || error.code !== 'invalid_session') return false;
+    setText(statusElement, 'Sesi diperbarui…');
+    window.setTimeout(function () { window.location.reload(); }, 500);
+    return true;
+  }
+
   function updateReading(payload) {
     var latest = payload && payload.latest;
     if (!latest) {
@@ -292,7 +306,7 @@
     })
       .then(function (response) {
         return response.json().catch(function () { return {}; }).then(function (body) {
-          if (!response.ok) throw new Error(body.message || 'Perintah ditolak.');
+          if (!response.ok) throw apiError(response, body, 'Perintah ditolak.');
           return body;
         });
       })
@@ -302,6 +316,7 @@
         setText(elements.powerConfirm, 'Perintah diterima');
       })
       .catch(function (error) {
+        if (reloadInvalidSession(error, elements.powerStatus)) return;
         powerBusy = false;
         powerPin = '';
         elements.powerConfirm.classList.remove('is-accepted');
@@ -420,7 +435,7 @@
     })
       .then(function (response) {
         return response.json().catch(function () { return {}; }).then(function (body) {
-          if (!response.ok) throw new Error(body.message || 'Akses ditolak.');
+          if (!response.ok) throw apiError(response, body, 'Akses ditolak.');
           return body;
         });
       })
@@ -435,6 +450,7 @@
         startDataExpiryCountdown(body.expiresIn);
       })
       .catch(function (error) {
+        if (reloadInvalidSession(error, elements.dataAccessStatus)) return;
         dataBusy = false;
         dataPin = '';
         updateDataAccessPanel();

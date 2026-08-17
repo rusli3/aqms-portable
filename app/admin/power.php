@@ -8,10 +8,14 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, max-age=0');
 header('X-Content-Type-Options: nosniff');
 
-function power_response(int $status, string $message): never
+function power_response(int $status, string $message, ?string $code = null): never
 {
     http_response_code($status);
-    echo json_encode(['message' => $message], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    $payload = ['message' => $message];
+    if ($code !== null) {
+        $payload['code'] = $code;
+    }
+    echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -60,7 +64,7 @@ session_start();
 $csrf = (string) ($_SERVER['HTTP_X_AQMS_CSRF'] ?? '');
 $sessionCsrf = $_SESSION['power_csrf'] ?? null;
 if (!is_string($sessionCsrf) || $csrf === '' || !hash_equals($sessionCsrf, $csrf)) {
-    power_response(403, 'Sesi kontrol tidak valid. Muat ulang dashboard.');
+    power_response(403, 'Sesi kontrol tidak valid. Memuat ulang dashboard.', 'invalid_session');
 }
 
 $action = $payload['action'] ?? null;

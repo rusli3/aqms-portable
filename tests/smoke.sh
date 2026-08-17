@@ -78,6 +78,11 @@ csrf="$(sed -n 's/.*data-csrf="\([^"]*\)".*/\1/p' "$dashboard_html" | head -n 1)
 [[ "$csrf" =~ ^[a-f0-9]{48}$ ]]
 
 [[ "$(curl -sS -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 405 ]]
+invalid_session_response="$(curl -sS -H 'Content-Type: application/json' -H 'X-AQMS-CSRF: stale' \
+  -d '{"pin":"2468"}' "${base_url}/admin/data-access.php")"
+grep -q '"code":"invalid_session"' <<<"$invalid_session_response"
+grep -q "error.code !== 'invalid_session'" app/dashboard/js/dashboard-7.js
+grep -q 'window.location.reload()' app/dashboard/js/dashboard-7.js
 [[ "$(curl -sS -b "$kiosk_cookies" -H 'Content-Type: application/json' -H "X-AQMS-CSRF: ${csrf}" \
   -d '{"action":"reboot","pin":"2468"}' \
   -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 503 ]]

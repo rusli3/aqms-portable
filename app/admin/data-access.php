@@ -71,7 +71,10 @@ session_start();
 $csrf = (string) ($_SERVER['HTTP_X_AQMS_CSRF'] ?? '');
 $sessionCsrf = $_SESSION['power_csrf'] ?? null;
 if (!is_string($sessionCsrf) || $csrf === '' || !hash_equals($sessionCsrf, $csrf)) {
-    data_access_response(403, ['message' => 'Sesi kontrol tidak valid. Muat ulang dashboard.']);
+    data_access_response(403, [
+        'message' => 'Sesi kontrol tidak valid. Memuat ulang dashboard.',
+        'code' => 'invalid_session',
+    ]);
 }
 
 $remoteAddress = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
