@@ -65,10 +65,8 @@ button, a { font: inherit; }
 
 .brand-copy { min-width: 0; }
 .eyebrow { color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .15em; }
-.brand-identity { min-width: 0; display: flex; align-items: baseline; gap: 9px; }
 .brand-copy h1, .section-heading h2 { margin: 2px 0 0; line-height: 1; }
 .brand-copy h1 { overflow: hidden; max-width: 25vw; flex: 0 1 auto; font-size: clamp(15px, 2.1vw, 21px); white-space: nowrap; text-overflow: ellipsis; letter-spacing: .02em; }
-.organization-name { overflow: hidden; max-width: 34vw; padding-left: 9px; border-left: 1px solid rgba(152,240,106,.32); color: #a9bbb5; font-size: 8px; font-weight: 800; line-height: 1.1; letter-spacing: .08em; white-space: nowrap; text-overflow: ellipsis; }
 .topbar-status { gap: 14px; }
 .sensor-link { gap: 7px; color: var(--muted); font-size: 11px; font-weight: 800; text-transform: uppercase; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 3px rgba(242,184,75,.13); }
@@ -171,10 +169,12 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
 .download-link { justify-content: space-between; padding: 0 13px; border: 1px solid rgba(84,214,207,.22); border-radius: 11px; color: var(--cyan); background: rgba(84,214,207,.055); text-decoration: none; font-size: 10px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
 .download-link svg { width: 17px; height: 17px; transition: transform .2s; }
 .download-link:hover svg { transform: translateX(3px); }
-.footer-strip { display: flex; align-items: center; justify-content: space-between; color: #62746f; font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-.footer-strip span:first-child { display: flex; align-items: center; gap: 6px; }
+.footer-strip { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; color: #62746f; font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.footer-status { min-width: 0; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .footer-strip i { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+.footer-organization { justify-self: center; color: #7e918b; white-space: nowrap; }
 .footer-strip a { color: inherit; text-decoration: none; transition: color .2s ease; }
+.footer-strip > a { justify-self: end; }
 .footer-strip a:hover, .footer-strip a:focus-visible { color: var(--cyan); }
 
 .power-modal {
@@ -293,9 +293,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
   .main-panel { grid-template-rows: minmax(120px, .86fr) minmax(170px, 1.14fr); }
   .side-panel { grid-template-rows: minmax(92px, .8fr) minmax(145px, 1.25fr) 54px 36px; gap: 6px; }
   .brand-mark { width: 34px; height: 34px; font-size: 15px; }
-  .brand-identity { gap: 6px; }
   .brand-copy h1 { max-width: 23vw; }
-  .organization-name { max-width: 39vw; padding-left: 6px; font-size: 7px; letter-spacing: .055em; }
   .sensor-link { display: none; }
   .clock-block strong { font-size: 18px; }
   .icon-button { width: 37px; height: 37px; }
@@ -317,6 +315,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
   .last-reading-card { padding: 6px 7px 6px 9px; }
   .refresh-button { height: 36px; min-width: 78px; padding: 0 8px; }
   .download-link { padding: 0 10px; }
+  .footer-strip { font-size: 7px; letter-spacing: .07em; }
   .power-modal { padding: 8px; }
   .power-dialog { width: min(420px, 98vw); padding: 12px; }
   .power-dialog-head { padding-bottom: 7px; }

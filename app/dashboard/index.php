@@ -47,10 +47,7 @@ $organizationName = htmlspecialchars(
                 <div class="brand-mark" aria-hidden="true">AQ</div>
                 <div class="brand-copy">
                     <span class="eyebrow">AIR QUALITY MONITORING</span>
-                    <div class="brand-identity">
-                        <h1><?= $pageTitle ?></h1>
-                        <span class="organization-name"><?= $organizationName ?></span>
-                    </div>
+                    <h1><?= $pageTitle ?></h1>
                 </div>
             </div>
 
@@ -199,8 +196,11 @@ $organizationName = htmlspecialchars(
         </section>
 
         <footer class="footer-strip">
-            <span><i></i>LOCAL MONITOR</span>
-            <span id="updateMessage" role="status">Pembaruan otomatis setiap 15 detik</span>
+            <span class="footer-status">
+                <i aria-hidden="true"></i>
+                <span id="updateMessage" role="status">Diperbarui --:--:--</span>
+            </span>
+            <span class="footer-organization"><?= $organizationName ?></span>
             <a href="https://github.com/rusli3/" target="_blank" rel="noopener noreferrer">UNIT PORTABEL / AQMS</a>
         </footer>
     </main>

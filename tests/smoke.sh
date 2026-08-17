@@ -38,6 +38,9 @@ grep -qi '^content-security-policy:' <<<"$headers"
 curl -fsS "${base_url}/dashboard/" | grep -q 'chart.umd.min.js'
 curl -fsS "${base_url}/dashboard/" | grep -q 'id="powerMenuButton"'
 curl -fsS "${base_url}/dashboard/" | grep -q 'DINAS LINGKUNGAN HIDUP KABUPATEN SANGGAU'
+curl -fsS "${base_url}/dashboard/" | grep -q 'class="footer-organization">DINAS LINGKUNGAN HIDUP KABUPATEN SANGGAU'
+curl -fsS "${base_url}/dashboard/" | grep -q 'class="footer-status"'
+! curl -fsS "${base_url}/dashboard/" | grep -q 'LOCAL MONITOR'
 curl -fsS "${base_url}/dashboard/" | grep -q '>KONTROL DAYA</h2>'
 ! curl -fsS "${base_url}/dashboard/" | grep -q 'Pilih tindakan, masukkan PIN'
 grep -Fq 'grid-template-columns: repeat(3, 1fr)' app/dashboard/css/dashboard-7.css
