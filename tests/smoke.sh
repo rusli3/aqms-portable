@@ -52,20 +52,21 @@ curl -fsS -H 'X-AQMS-Token: ci-test-token' "${base_url}/partikulat/insert.php?${
 [[ "$(curl -sS -o /dev/null -w '%{http_code}' -X POST "${base_url}/insert.php")" == 405 ]]
 
 headers="$(curl -fsSI "${base_url}/dashboard/")"
+dashboard_page="$(curl -fsS "${base_url}/dashboard/")"
 grep -qi '^content-security-policy:' <<<"$headers"
 ! grep -qi '^x-powered-by:' <<<"$headers"
 ! grep -Eqi '^server:.*[0-9]' <<<"$headers"
-curl -fsS "${base_url}/dashboard/" | grep -q 'chart.umd.min.js'
-curl -fsS "${base_url}/dashboard/" | grep -q 'qrcode-generator/qrcode.js'
-curl -fsS "${base_url}/dashboard/" | grep -q 'id="powerMenuButton"'
-curl -fsS "${base_url}/dashboard/" | grep -q 'id="dataAccessButton"'
-! curl -fsS "${base_url}/dashboard/" | grep -q 'id="fullscreenButton"'
-curl -fsS "${base_url}/dashboard/" | grep -q 'DINAS LINGKUNGAN HIDUP KABUPATEN SANGGAU'
-curl -fsS "${base_url}/dashboard/" | grep -q 'class="footer-organization">DINAS LINGKUNGAN HIDUP KABUPATEN SANGGAU'
-curl -fsS "${base_url}/dashboard/" | grep -q 'class="footer-status"'
-! curl -fsS "${base_url}/dashboard/" | grep -q 'LOCAL MONITOR'
-curl -fsS "${base_url}/dashboard/" | grep -q '>KONTROL DAYA</h2>'
-! curl -fsS "${base_url}/dashboard/" | grep -q 'Pilih tindakan, masukkan PIN'
+grep -q 'chart.umd.min.js' <<<"$dashboard_page"
+grep -q 'qrcode-generator/qrcode.js' <<<"$dashboard_page"
+grep -q 'id="powerMenuButton"' <<<"$dashboard_page"
+grep -q 'id="dataAccessButton"' <<<"$dashboard_page"
+! grep -q 'id="fullscreenButton"' <<<"$dashboard_page"
+grep -q 'DINAS LINGKUNGAN HIDUP KABUPATEN SANGGAU' <<<"$dashboard_page"
+grep -q 'class="footer-organization">DINAS LINGKUNGAN HIDUP KABUPATEN SANGGAU' <<<"$dashboard_page"
+grep -q 'class="footer-status"' <<<"$dashboard_page"
+! grep -q 'LOCAL MONITOR' <<<"$dashboard_page"
+grep -q '>KONTROL DAYA</h2>' <<<"$dashboard_page"
+! grep -q 'Pilih tindakan, masukkan PIN' <<<"$dashboard_page"
 grep -Fq 'grid-template-columns: repeat(3, 1fr)' app/dashboard/css/dashboard-7.css
 grep -Fq "'Diperbarui ' + formatTime(new Date(), true)" app/dashboard/js/dashboard-7.js
 [[ "$(curl -sS -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 405 ]]
@@ -87,7 +88,8 @@ grep -q 'WIFI:T:WPA;S:PARTIKULAT02-TEST' <<<"$access_response"
 access_url="$(sed -n 's/.*"accessUrl":"\([^"]*\)".*/\1/p' <<<"$access_response")"
 [[ "$access_url" == "${base_url}/display/?access="* ]]
 
-curl -fsS -L -c "$phone_cookies" "$access_url" | grep -q '>Data mentah</h1>'
+access_page="$(curl -fsS -L -c "$phone_cookies" "$access_url")"
+grep -q '>Data mentah</h1>' <<<"$access_page"
 [[ "$(curl -sS -o /dev/null -w '%{http_code}' "$access_url")" == 403 ]]
 
 docker compose exec -T database sh -c 'exec mysql -uaqms -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' <<'SQL'
