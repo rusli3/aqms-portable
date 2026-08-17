@@ -70,7 +70,7 @@ access_response="$(curl -fsS -b "$kiosk_cookies" -c "$kiosk_cookies" \
   -H 'Content-Type: application/json' -H "X-AQMS-CSRF: ${csrf}" \
   -d '{"pin":"2468"}' "${base_url}/admin/data-access.php")"
 grep -q 'WIFI:T:WPA;S:PARTIKULAT02-TEST' <<<"$access_response"
-access_url="$(node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).accessUrl))' <<<"$access_response")"
+access_url="$(sed -n 's/.*"accessUrl":"\([^"]*\)".*/\1/p' <<<"$access_response")"
 [[ "$access_url" == "${base_url}/display/?access="* ]]
 
 curl -fsS -L -c "$phone_cookies" "$access_url" | grep -q '>Data mentah</h1>'
