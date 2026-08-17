@@ -33,6 +33,13 @@ td { font-size:13px; }
 .access-denied-card { width:min(520px,100%); padding:28px; border:1px solid var(--line); border-radius:18px 5px 18px 5px; background:var(--panel); box-shadow:0 24px 70px rgba(0,0,0,.45); }
 .access-denied-card p { margin:14px 0 0; color:var(--muted); font-size:16px; line-height:1.55; }
 .access-denied-card strong { color:var(--cyan); }
+.access-confirm-card { position:relative; overflow:hidden; }
+.access-confirm-card::after { content:""; position:absolute; width:180px; height:180px; right:-92px; top:-96px; border:1px solid rgba(84,214,207,.18); border-radius:50%; box-shadow:0 0 0 28px rgba(84,214,207,.035),0 0 0 58px rgba(152,240,106,.025); pointer-events:none; }
+.access-confirm-form { display:block; margin-top:24px; }
+.access-confirm-form input { display:none; }
+.access-confirm-form button { width:100%; min-height:54px; border:0; border-radius:10px 3px 10px 3px; color:#07110f; background:linear-gradient(100deg,var(--green),#b7ff8f); box-shadow:0 14px 32px rgba(88,190,116,.18); font-size:15px; letter-spacing:.12em; }
+.access-confirm-form button:active { transform:translateY(1px); }
+.access-note { display:block; margin-top:12px; color:var(--muted); font-size:11px; line-height:1.45; }
 @media (max-width:640px) {
   .history-shell { padding:14px; }
   .history-header { align-items:start; flex-direction:column; }

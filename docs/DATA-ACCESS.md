@@ -9,9 +9,12 @@ Dashboard menampilkan dua QR hanya setelah PIN administrator diverifikasi.
 2. Masukkan PIN administrator 4–8 digit.
 3. Pindai QR pertama agar HP terhubung ke Wi-Fi AQMS.
 4. Jika HP menyatakan Wi-Fi tidak memiliki internet, pilih untuk tetap terhubung.
-5. Pindai QR kedua untuk membuka halaman data lokal.
+5. Pindai QR kedua, lalu tekan **Buka Data**.
 6. Pilih tanggal awal dan akhir, atau centang **Semua Data**.
 7. Tekan **Unduh CSV**.
+
+Tombol konfirmasi mencegah pratinjau otomatis dari pemindai QR atau browser
+menghabiskan token sekali pakai sebelum halaman benar-benar dibuka.
 
 CSV memuat data mentah dari tabel `maintb` dalam urutan waktu paling lama ke
 paling baru. Kolomnya adalah `waktu`, `pm1`, `pm25`, `pm10`, `temp`, `humd`,

@@ -90,8 +90,16 @@ grep -q 'WIFI:T:WPA;S:PARTIKULAT02-TEST' <<<"$access_response"
 access_url="$(sed -n 's/.*"accessUrl":"\([^"]*\)".*/\1/p' <<<"$access_response")"
 [[ "$access_url" == "${base_url}/display/?access="* ]]
 
-access_page="$(curl -fsS -L -c "$phone_cookies" "$access_url")"
-grep -q '>Data mentah</h1>' <<<"$access_page"
+access_page="$(curl -fsS "$access_url")"
+grep -q '>BUKA DATA</button>' <<<"$access_page"
+# Pemindai QR dan browser boleh melakukan pratinjau GET tanpa menghabiskan token.
+access_preview="$(curl -fsS "$access_url")"
+grep -q '>BUKA DATA</button>' <<<"$access_preview"
+access_token="${access_url##*access=}"
+[[ "$access_token" =~ ^[a-f0-9]{64}$ ]]
+authorized_page="$(curl -fsS -L -c "$phone_cookies" \
+  --data-urlencode "access=${access_token}" "${base_url}/display/")"
+grep -q '>Data mentah</h1>' <<<"$authorized_page"
 [[ "$(curl -sS -o /dev/null -w '%{http_code}' "$access_url")" == 403 ]]
 
 docker compose exec -T database sh -c 'exec mysql -uaqms -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' <<'SQL'

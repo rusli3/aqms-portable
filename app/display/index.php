@@ -24,15 +24,16 @@ function aqms_data_session_start(): void
     session_start();
 }
 
-function aqms_consume_access_token(string $token): bool
+function aqms_access_token_is_valid(string $token, bool $consume = false): bool
 {
     if (preg_match('/^[a-f0-9]{64}$/D', $token) !== 1) {
         return false;
     }
 
     $tokenPath = sys_get_temp_dir() . '/aqms-data-token-' . hash('sha256', $token) . '.json';
-    $handle = @fopen($tokenPath, 'r');
-    if ($handle === false || !flock($handle, LOCK_EX)) {
+    $handle = @fopen($tokenPath, $consume ? 'r+' : 'r');
+    $lock = $consume ? LOCK_EX : LOCK_SH;
+    if ($handle === false || !flock($handle, $lock)) {
         if (is_resource($handle)) {
             fclose($handle);
         }
@@ -49,7 +50,9 @@ function aqms_consume_access_token(string $token): bool
     $raw = stream_get_contents($handle);
     $record = is_string($raw) ? json_decode($raw, true) : null;
     $valid = is_array($record) && (int) ($record['expires'] ?? 0) >= time();
-    @unlink($tokenPath);
+    if ($consume) {
+        @unlink($tokenPath);
+    }
     flock($handle, LOCK_UN);
     fclose($handle);
     return $valid;
@@ -80,11 +83,45 @@ function aqms_raw_statement(
 }
 
 aqms_data_session_start();
-$accessToken = (string) ($_GET['access'] ?? '');
-if ($accessToken !== '' && aqms_consume_access_token($accessToken)) {
+$requestMethod = (string) ($_SERVER['REQUEST_METHOD'] ?? 'GET');
+$accessToken = $requestMethod === 'POST'
+    ? (string) ($_POST['access'] ?? '')
+    : (string) ($_GET['access'] ?? '');
+
+if ($requestMethod === 'POST' && $accessToken !== '' && aqms_access_token_is_valid($accessToken, true)) {
     $_SESSION['data_access_until'] = time() + AQMS_DATA_SESSION_SECONDS;
     session_regenerate_id(true);
     header('Location: ./', true, 303);
+    exit;
+}
+
+if ($requestMethod === 'GET' && $accessToken !== '' && aqms_access_token_is_valid($accessToken)) {
+    header('Cache-Control: no-store, max-age=0');
+    header('X-Robots-Tag: noindex, nofollow');
+    ?>
+    <!doctype html>
+    <html lang="id">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#07110f">
+        <title>Buka data AQMS</title>
+        <link rel="stylesheet" href="display.css">
+    </head>
+    <body class="access-denied-page">
+        <main class="access-denied-card access-confirm-card">
+            <span class="eyebrow">ARSIP LOKAL AQMS</span>
+            <h1>Tautan siap</h1>
+            <p>Perangkat terhubung ke unit AQMS. Tekan tombol untuk membuka data mentah.</p>
+            <form class="access-confirm-form" method="post" action="./">
+                <input type="hidden" name="access" value="<?= htmlspecialchars($accessToken, ENT_QUOTES, 'UTF-8') ?>">
+                <button type="submit">BUKA DATA</button>
+            </form>
+            <small class="access-note">Tautan digunakan satu kali setelah tombol ditekan.</small>
+        </main>
+    </body>
+    </html>
+    <?php
     exit;
 }
 
