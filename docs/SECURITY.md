@@ -10,6 +10,8 @@
   serta mengirim CSP, `nosniff`, frame denial, referrer, dan permissions policy.
 - PHP tidak mengekspos versi atau error ke browser.
 - Dashboard dan ekspor CSV tidak memerlukan CDN atau koneksi internet.
+- Ekspor data mentah dilindungi PIN, rate limit, token 256-bit sekali pakai
+  berumur 10 menit, dan sesi HP berumur 60 menit.
 - Named volume, backup terverifikasi, healthcheck, restart policy, dan CI tersedia.
 - Sinkronisasi cloud SenseSync tidak ada dalam aplikasi modern.
 - Kontrol daya dinonaktifkan secara default; bila diaktifkan, PIN menggunakan
@@ -33,6 +35,8 @@ elemen; tidak ada nilai style yang berasal dari input pengguna.
 7. Bila menu daya dipakai, pasang broker melalui panduan
    `docs/POWER-CONTROL.md`, gunakan PIN minimal enam digit, dan jangan membuka
    dashboard ke internet.
+8. Simpan PSK QR Wi-Fi hanya di `.env`; QR mengandung PSK sehingga hanya boleh
+   ditampilkan sesudah PIN benar. Ikuti `docs/DATA-ACCESS.md`.
 
 ## Batas yang tetap berlaku
 

@@ -37,6 +37,8 @@ lebih aman dan mudah dipulihkan.
   broker systemd host yang hanya menerima dua tindakan daya terverifikasi.
 - Startup kiosk tahan terhadap Ethernet yang tidak terpasang: boot tidak menunggu
   kabel LAN dan display otomatis dimuat ulang setelah aplikasi lokal sehat.
+- Unduh data mentah melalui HP dengan alur PIN, QR Wi-Fi, QR akses sekali pakai,
+  pilihan periode atau seluruh data, dan ekspor CSV seluruh parameter sensor.
 
 ## Arsitektur singkat
 
@@ -50,6 +52,9 @@ flowchart LR
     D --> G[Dashboard API]
     F --> G
     G --> H[Layar sentuh 7 inci]
+    D --> I[Ekspor CSV mentah]
+    H -->|PIN + dua QR| J[HP petugas]
+    J --> I
 ```
 
 Tidak ada cabang pengiriman ke server SenseSync. Seluruh pengolahan berjalan di
@@ -115,10 +120,30 @@ Variabel aplikasi tersedia pada [.env.example](.env.example):
 | `AQMS_INGEST_ALLOWED_CIDRS` | IP/CIDR yang boleh mengirim data |
 | `AQMS_INGEST_TOKEN` | Token opsional bila firmware mendukungnya |
 | `AQMS_INGEST_MIN_INTERVAL_SECONDS` | Jarak minimum antarpaket |
+| `AQMS_ADMIN_PIN_HASH` | Hash PIN untuk kontrol daya dan akses data |
+| `AQMS_WIFI_SSID` | SSID jaringan lokal yang dimasukkan ke QR Wi-Fi |
+| `AQMS_WIFI_PSK` | PSK rahasia jaringan lokal; hanya disimpan di `.env` |
+| `AQMS_WIFI_HIDDEN` | Menandai SSID tersembunyi pada QR Wi-Fi |
+| `AQMS_DATA_URL` | URL lokal yang dimasukkan ke QR halaman data |
 
 Compose menolak start bila kedua password belum diisi. Gunakan secret yang unik
 dan batasi akses jaringan sebelum pemasangan lapangan; jangan memakai nilai
 placeholder dari `.env.example`.
+
+## Unduh data melalui HP
+
+Tekan **Akses Data** pada dashboard, masukkan PIN admin, lalu:
+
+1. pindai QR pertama untuk terhubung ke Wi-Fi `PARTIKULAT02`;
+2. pindai QR kedua untuk membuka halaman data;
+3. pilih rentang tanggal atau **Semua Data**;
+4. tekan **Unduh CSV**.
+
+QR kedua memakai token acak sekali pakai yang berlaku 10 menit. Setelah dipindai,
+HP memperoleh sesi unduh selama 60 menit dan token langsung dihapus. Ekspor
+mengambil data mentah dari `maintb`, bukan data rata-rata `coretb`, dan memuat
+kolom waktu, PM1, PM2.5, PM10, suhu, kelembapan, arus, baterai, pompa, tegangan,
+serta tekanan. QR dibuat lokal sehingga fitur tetap bekerja tanpa internet.
 
 ## Protokol sensor
 
@@ -173,6 +198,7 @@ data, dan ketentuan instansi berwenang.
 - [Keamanan](docs/SECURITY.md)
 - [Keamanan image container](docs/CONTAINER_SECURITY.md)
 - [Kontrol reboot dan shutdown](docs/POWER-CONTROL.md)
+- [Akses dan unduh data melalui HP](docs/DATA-ACCESS.md)
 
 ## Backup dan pemulihan
 
@@ -191,7 +217,7 @@ Uji restore pada stack terpisah sebelum mengandalkannya di lapangan.
 ├── app/
 │   ├── config/          # koneksi database berbasis environment
 │   ├── dashboard/       # UI 7 inci, API JSON, dan perhitungan ISPU
-│   ├── display/         # halaman riwayat data warisan
+│   ├── display/         # halaman HP dan ekspor CSV data mentah
 │   ├── insert.php       # endpoint data sensor
 │   └── scheduler/       # agregasi lokal lima menit
 ├── database/schema.sql  # skema publik tanpa data operasional
@@ -212,7 +238,7 @@ disiapkan untuk mencegah dump pemulihan utama ikut terunggah.
 
 ## Lisensi
 
-Proyek utama belum memiliki lisensi open-source. Dependensi chart adalah Chart.js
-4.5.1 berlisensi MIT; rincian dan checksum tersedia di
+Proyek utama belum memiliki lisensi open-source. Dependensi chart dan pembuat QR
+berlisensi MIT; rincian dan checksum tersedia di
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), dengan salinan lisensi vendor
 di direktori aset.

@@ -10,6 +10,9 @@ $powerControlsEnabled = in_array(
     ['1', 'true', 'yes', 'on'],
     true
 ) && aqms_env('AQMS_ADMIN_PIN_HASH') !== null;
+$dataAccessEnabled = aqms_env('AQMS_ADMIN_PIN_HASH') !== null
+    && aqms_env('AQMS_WIFI_SSID') !== null
+    && aqms_env('AQMS_WIFI_PSK') !== null;
 
 session_name('AQMSCONTROL');
 session_set_cookie_params([
@@ -185,10 +188,10 @@ $organizationName = htmlspecialchars(
                     </button>
                 </section>
 
-                <a class="download-link" href="../display/index.php">
-                    <span>Riwayat &amp; unduh data</span>
+                <button class="download-link" id="dataAccessButton" type="button">
+                    <span>Akses data</span>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
-                </a>
+                </button>
             </aside>
         </section>
 
@@ -258,7 +261,73 @@ $organizationName = htmlspecialchars(
         </div>
     </div>
 
+    <div
+        class="data-access-modal"
+        id="dataAccessModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dataAccessDialogTitle"
+        aria-hidden="true"
+        data-enabled="<?= $dataAccessEnabled ? 'true' : 'false' ?>"
+        data-csrf="<?= $powerCsrf ?>"
+    >
+        <div class="data-access-dialog">
+            <div class="data-access-head">
+                <div>
+                    <span class="eyebrow">TRANSFER KE HP</span>
+                    <h2 id="dataAccessDialogTitle">AKSES DATA</h2>
+                </div>
+                <button class="data-access-close" id="dataAccessCloseButton" type="button" aria-label="Tutup akses data">&times;</button>
+            </div>
+
+            <section class="data-auth-view" id="dataAuthView">
+                <div class="data-pin-dots" id="dataPinDots" aria-label="PIN belum diisi"><span>— — — —</span></div>
+                <div class="data-pin-keypad" aria-label="Keypad PIN akses data">
+                    <button type="button" data-data-pin-key="1">1</button>
+                    <button type="button" data-data-pin-key="2">2</button>
+                    <button type="button" data-data-pin-key="3">3</button>
+                    <button type="button" data-data-pin-key="4">4</button>
+                    <button type="button" data-data-pin-key="5">5</button>
+                    <button type="button" data-data-pin-key="6">6</button>
+                    <button type="button" data-data-pin-key="7">7</button>
+                    <button type="button" data-data-pin-key="8">8</button>
+                    <button type="button" data-data-pin-key="9">9</button>
+                    <button type="button" data-data-pin-key="clear" aria-label="Hapus seluruh PIN">C</button>
+                    <button type="button" data-data-pin-key="0">0</button>
+                    <button type="button" data-data-pin-key="backspace" aria-label="Hapus angka terakhir">&#9003;</button>
+                </div>
+                <div class="data-auth-foot">
+                    <p id="dataAccessStatus" role="status">PIN 4–8 DIGIT</p>
+                    <button class="data-access-confirm" id="dataAccessConfirmButton" type="button" disabled>Tampilkan QR</button>
+                </div>
+            </section>
+
+            <section class="data-qr-view" id="dataQrView" hidden>
+                <div class="qr-steps">
+                    <article class="qr-card">
+                        <span class="qr-step">1</span>
+                        <div class="qr-code" id="wifiQr" aria-label="QR koneksi Wi-Fi"></div>
+                        <div class="qr-copy">
+                            <strong>Hubungkan Wi‑Fi</strong>
+                            <span id="wifiQrLabel">PARTIKULAT02</span>
+                        </div>
+                    </article>
+                    <article class="qr-card">
+                        <span class="qr-step">2</span>
+                        <div class="qr-code" id="dataQr" aria-label="QR halaman unduh data"></div>
+                        <div class="qr-copy">
+                            <strong>Buka halaman data</strong>
+                            <span>Pilih periode atau Semua Data</span>
+                        </div>
+                    </article>
+                </div>
+                <p class="qr-expiry" id="dataQrExpiry">Tautan berlaku 10:00</p>
+            </section>
+        </div>
+    </div>
+
     <script src="js/vendor/chart.js/chart.umd.min.js"></script>
+    <script src="js/vendor/qrcode-generator/qrcode.js"></script>
     <script src="js/dashboard-7.js"></script>
 </body>
 </html>

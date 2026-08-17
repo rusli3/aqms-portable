@@ -73,7 +73,7 @@ if (!is_string($pin) || preg_match('/^[0-9]{4,8}$/D', $pin) !== 1) {
 }
 
 $remoteAddress = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
-$ratePath = sys_get_temp_dir() . '/aqms-power-' . hash('sha256', $remoteAddress) . '.json';
+$ratePath = sys_get_temp_dir() . '/aqms-admin-pin-' . hash('sha256', $remoteAddress) . '.json';
 $rateHandle = fopen($ratePath, 'c+');
 if ($rateHandle === false || !flock($rateHandle, LOCK_EX)) {
     power_response(503, 'Pemeriksaan keamanan tidak tersedia.');

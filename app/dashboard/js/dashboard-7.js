@@ -7,6 +7,9 @@
   var powerAction = '';
   var powerPin = '';
   var powerBusy = false;
+  var dataPin = '';
+  var dataBusy = false;
+  var dataExpiryTimer = null;
 
   function byId(id) { return document.getElementById(id); }
 
@@ -315,6 +318,130 @@
     updatePowerPanel();
   }
 
+  function updateDataAccessPanel() {
+    var enabled = elements.dataAccessModal.dataset.enabled === 'true';
+    var validPin = dataPin.length >= 4 && dataPin.length <= 8;
+    var dots = '';
+    var index;
+
+    for (index = 0; index < dataPin.length; index += 1) dots += '<i></i>';
+    elements.dataPinDots.innerHTML = dots || '<span>— — — —</span>';
+    elements.dataPinDots.setAttribute('aria-label', dataPin.length
+      ? dataPin.length + ' digit PIN telah diisi'
+      : 'PIN belum diisi');
+    elements.dataPinKeys.forEach(function (button) { button.disabled = dataBusy || !enabled; });
+    elements.dataAccessConfirm.disabled = dataBusy || !enabled || !validPin;
+    setText(elements.dataAccessConfirm, dataBusy ? 'Memeriksa…' : 'Tampilkan QR');
+
+    if (!enabled) setText(elements.dataAccessStatus, 'Akses data belum dikonfigurasi.');
+    else if (!dataBusy) setText(elements.dataAccessStatus, 'PIN 4–8 DIGIT');
+  }
+
+  function resetDataAccessPanel() {
+    dataPin = '';
+    dataBusy = false;
+    if (dataExpiryTimer) window.clearInterval(dataExpiryTimer);
+    dataExpiryTimer = null;
+    elements.dataAuthView.hidden = false;
+    elements.dataQrView.hidden = true;
+    elements.wifiQr.innerHTML = '';
+    elements.dataQr.innerHTML = '';
+    updateDataAccessPanel();
+  }
+
+  function openDataAccessPanel() {
+    resetDataAccessPanel();
+    elements.dataAccessModal.classList.add('is-open');
+    elements.dataAccessModal.setAttribute('aria-hidden', 'false');
+    elements.dataAccessClose.focus();
+  }
+
+  function closeDataAccessPanel() {
+    if (dataBusy) return;
+    elements.dataAccessModal.classList.remove('is-open');
+    elements.dataAccessModal.setAttribute('aria-hidden', 'true');
+    resetDataAccessPanel();
+    elements.dataAccessButton.focus();
+  }
+
+  function handleDataPinKey(key) {
+    if (dataBusy) return;
+    if (key === 'clear') dataPin = '';
+    else if (key === 'backspace') dataPin = dataPin.slice(0, -1);
+    else if (/^[0-9]$/.test(key) && dataPin.length < 8) dataPin += key;
+    updateDataAccessPanel();
+  }
+
+  function renderQr(element, payload) {
+    if (!window.qrcode) throw new Error('Pembuat QR tidak tersedia.');
+    var code = window.qrcode(0, 'M');
+    code.addData(payload, 'Byte');
+    code.make();
+    element.innerHTML = code.createSvgTag({
+      cellSize: 4,
+      margin: 8,
+      scalable: true
+    });
+  }
+
+  function startDataExpiryCountdown(seconds) {
+    var remaining = Math.max(0, Number(seconds) || 0);
+    function update() {
+      var minutes = Math.floor(remaining / 60);
+      var secs = String(remaining % 60).padStart(2, '0');
+      setText(elements.dataQrExpiry, remaining > 0
+        ? 'Tautan halaman data berlaku ' + minutes + ':' + secs
+        : 'Tautan kedaluwarsa — tutup lalu masukkan PIN kembali');
+      if (remaining > 0) remaining -= 1;
+      else if (dataExpiryTimer) {
+        window.clearInterval(dataExpiryTimer);
+        dataExpiryTimer = null;
+      }
+    }
+    update();
+    dataExpiryTimer = window.setInterval(update, 1000);
+  }
+
+  function submitDataAccessRequest() {
+    if (dataBusy || dataPin.length < 4) return;
+    dataBusy = true;
+    setText(elements.dataAccessStatus, 'Memverifikasi PIN…');
+    updateDataAccessPanel();
+
+    fetch('../admin/data-access.php', {
+      method: 'POST',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-AQMS-CSRF': elements.dataAccessModal.dataset.csrf
+      },
+      body: JSON.stringify({ pin: dataPin })
+    })
+      .then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (body) {
+          if (!response.ok) throw new Error(body.message || 'Akses ditolak.');
+          return body;
+        });
+      })
+      .then(function (body) {
+        renderQr(elements.wifiQr, body.wifiPayload);
+        renderQr(elements.dataQr, body.accessUrl);
+        setText(elements.wifiQrLabel, body.wifiSsid);
+        elements.dataAuthView.hidden = true;
+        elements.dataQrView.hidden = false;
+        dataBusy = false;
+        dataPin = '';
+        startDataExpiryCountdown(body.expiresIn);
+      })
+      .catch(function (error) {
+        dataBusy = false;
+        dataPin = '';
+        updateDataAccessPanel();
+        setText(elements.dataAccessStatus, error.message || 'Akses data gagal.');
+      });
+  }
+
   function cacheElements() {
     elements = {
       pm1: byId('pm1Value'), pm25: byId('pm25Value'), pm10: byId('pm10Value'),
@@ -333,7 +460,14 @@
       powerClose: byId('powerCloseButton'), powerStatus: byId('powerStatus'),
       powerConfirm: byId('powerConfirmButton'), pinDots: byId('pinDots'),
       powerActions: Array.prototype.slice.call(document.querySelectorAll('[data-power-action]')),
-      pinKeys: Array.prototype.slice.call(document.querySelectorAll('[data-pin-key]'))
+      pinKeys: Array.prototype.slice.call(document.querySelectorAll('[data-pin-key]')),
+      dataAccessButton: byId('dataAccessButton'), dataAccessModal: byId('dataAccessModal'),
+      dataAccessClose: byId('dataAccessCloseButton'), dataAuthView: byId('dataAuthView'),
+      dataQrView: byId('dataQrView'), dataPinDots: byId('dataPinDots'),
+      dataAccessStatus: byId('dataAccessStatus'), dataAccessConfirm: byId('dataAccessConfirmButton'),
+      wifiQr: byId('wifiQr'), wifiQrLabel: byId('wifiQrLabel'), dataQr: byId('dataQr'),
+      dataQrExpiry: byId('dataQrExpiry'),
+      dataPinKeys: Array.prototype.slice.call(document.querySelectorAll('[data-data-pin-key]'))
     };
   }
 
@@ -360,16 +494,34 @@
       button.addEventListener('click', function () { handlePinKey(button.dataset.pinKey); });
     });
     elements.powerConfirm.addEventListener('click', submitPowerRequest);
+    elements.dataAccessButton.addEventListener('click', openDataAccessPanel);
+    elements.dataAccessClose.addEventListener('click', closeDataAccessPanel);
+    elements.dataAccessModal.addEventListener('click', function (event) {
+      if (event.target === elements.dataAccessModal) closeDataAccessPanel();
+    });
+    elements.dataPinKeys.forEach(function (button) {
+      button.addEventListener('click', function () { handleDataPinKey(button.dataset.dataPinKey); });
+    });
+    elements.dataAccessConfirm.addEventListener('click', submitDataAccessRequest);
     document.addEventListener('keydown', function (event) {
-      if (!elements.powerModal.classList.contains('is-open')) return;
-      if (event.key === 'Escape') closePowerPanel();
-      else if (event.key === 'Backspace') handlePinKey('backspace');
-      else if (/^[0-9]$/.test(event.key)) handlePinKey(event.key);
-      else if (event.key === 'Enter') submitPowerRequest();
+      if (elements.dataAccessModal.classList.contains('is-open')) {
+        if (event.key === 'Escape') closeDataAccessPanel();
+        else if (event.key === 'Backspace') handleDataPinKey('backspace');
+        else if (/^[0-9]$/.test(event.key)) handleDataPinKey(event.key);
+        else if (event.key === 'Enter') submitDataAccessRequest();
+        return;
+      }
+      if (elements.powerModal.classList.contains('is-open')) {
+        if (event.key === 'Escape') closePowerPanel();
+        else if (event.key === 'Backspace') handlePinKey('backspace');
+        else if (/^[0-9]$/.test(event.key)) handlePinKey(event.key);
+        else if (event.key === 'Enter') submitPowerRequest();
+      }
     });
     refreshTimer = window.setInterval(function () { fetchData(false); }, 15000);
     window.addEventListener('beforeunload', function () {
       if (refreshTimer) window.clearInterval(refreshTimer);
+      if (dataExpiryTimer) window.clearInterval(dataExpiryTimer);
     });
   });
 }());
