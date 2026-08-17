@@ -39,11 +39,36 @@ netplan set --origin-hint 99-aqms-resilience \
 chmod 0600 /etc/netplan/99-aqms-resilience.yaml
 netplan generate
 
-if ! grep -Rqs '^RequiredForOnline=no$' \
-    /run/systemd/network/*"${ethernet_interface}"*.network; then
-    echo "Netplan belum menghasilkan RequiredForOnline=no untuk ${ethernet_interface}" >&2
+if [[ "$(netplan get "ethernets.${ethernet_interface}.optional")" != "true" ]]; then
+    echo "Netplan belum menyimpan optional=true untuk ${ethernet_interface}" >&2
     exit 1
 fi
+
+wait_online_bin=""
+for candidate in \
+    /usr/lib/systemd/systemd-networkd-wait-online \
+    /lib/systemd/systemd-networkd-wait-online; do
+    if [[ -x "${candidate}" ]]; then
+        wait_online_bin="${candidate}"
+        break
+    fi
+done
+
+if [[ -z "${wait_online_bin}" ]]; then
+    echo "systemd-networkd-wait-online tidak ditemukan" >&2
+    exit 1
+fi
+
+# Netplan baru menerapkan RequiredForOnline=no ketika networkd memuat ulang
+# konfigurasi. Drop-in ini menjamin boot berikutnya mengabaikan hanya Ethernet
+# administrasi, tanpa menonaktifkan mekanisme wait-online secara global.
+install -d -o root -g root -m 0755 \
+    /etc/systemd/system/systemd-networkd-wait-online.service.d
+printf '[Service]\nExecStart=\nExecStart=%s --ignore=%s\n' \
+    "${wait_online_bin}" "${ethernet_interface}" \
+    > /etc/systemd/system/systemd-networkd-wait-online.service.d/50-aqms-ethernet-optional.conf
+chmod 0644 \
+    /etc/systemd/system/systemd-networkd-wait-online.service.d/50-aqms-ethernet-optional.conf
 
 install -d -o root -g root -m 0755 /usr/local/libexec
 install -o root -g root -m 0755 \

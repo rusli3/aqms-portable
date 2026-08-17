@@ -14,7 +14,8 @@ menampilkan `Connection refused` dan tidak selalu mencoba ulang sendiri.
 Perbaikan terdiri dari dua lapisan:
 
 1. Ethernet ditandai `optional` pada Netplan sehingga boot tidak menunggu kabel.
-2. `aqms-kiosk-ready.service` menunggu `/health.php` berhasil, lalu menyegarkan
+2. Drop-in wait-online mengabaikan hanya interface Ethernet administrasi.
+3. `aqms-kiosk-ready.service` menunggu `/health.php` berhasil, lalu menyegarkan
    Ubuntu Frame dan WPE agar dashboard tampil tanpa menyentuh **Try Again**.
 
 ## Pemasangan
@@ -38,15 +39,16 @@ Efek boot tanpa menunggu Ethernet berlaku penuh pada reboot berikutnya.
 ## Verifikasi
 
 ```bash
-grep -R '^RequiredForOnline=' /run/systemd/network/*enp1s0*.network
+sudo netplan get ethernets.enp1s0.optional
+systemctl cat systemd-networkd-wait-online.service | grep -- '--ignore=enp1s0'
 systemctl is-enabled aqms-kiosk-ready.service
 systemctl is-active aqms-kiosk-ready.service
 journalctl -u aqms-kiosk-ready.service -b --no-pager
 curl -fsS http://127.0.0.1/health.php
 ```
 
-Hasil yang diharapkan adalah `RequiredForOnline=no`, service `enabled` dan
-`active`, log `kiosk AQMS siap`, serta respons health `ok`.
+Hasil yang diharapkan adalah `true`, baris `--ignore=enp1s0`, service `enabled`
+dan `active`, log `kiosk AQMS siap`, serta respons health `ok`.
 
 Lakukan uji penerimaan dengan mematikan unit secara normal, mencabut Ethernet,
 kemudian menyalakan kembali. Dashboard harus muncul otomatis setelah stack
@@ -76,6 +78,7 @@ sudo systemctl restart aqms-kiosk-ready.service
 sudo systemctl disable --now aqms-kiosk-ready.service
 sudo rm /etc/systemd/system/aqms-kiosk-ready.service
 sudo rm /usr/local/libexec/aqms-kiosk-ready
+sudo rm /etc/systemd/system/systemd-networkd-wait-online.service.d/50-aqms-ethernet-optional.conf
 sudo rm /etc/netplan/99-aqms-resilience.yaml
 sudo netplan generate
 sudo systemctl daemon-reload
