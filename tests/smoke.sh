@@ -70,7 +70,7 @@ grep -q '>KONTROL DAYA</h2>' <<<"$dashboard_page"
 grep -Fq 'grid-template-columns: repeat(3, 1fr)' app/dashboard/css/dashboard-7.css
 grep -Fq "'Diperbarui ' + formatTime(new Date(), true)" app/dashboard/js/dashboard-7.js
 [[ "$(curl -sS -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 405 ]]
-[[ "$(curl -sS -H 'Content-Type: application/json' -d '{"action":"reboot","pin":"0000"}' \
+[[ "$(curl -sS -H 'Content-Type: application/json' -d '{"action":"reboot","pin":"2468"}' \
   -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 503 ]]
 [[ "$(curl -sS -o /dev/null -w '%{http_code}' "${base_url}/display/")" == 403 ]]
 
