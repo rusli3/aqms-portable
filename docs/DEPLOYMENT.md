@@ -132,7 +132,8 @@ snap services ubuntu-frame wpe-webkit-mir-kiosk
 ```
 
 Pasang ketahanan startup setelah kedua snap aktif. Ini membuat Ethernet opsional
-dan memastikan WPE baru disegarkan setelah web serta database lokal sehat:
+dan memastikan WPE disegarkan satu kali setelah web serta database lokal sehat,
+tanpa me-restart Ubuntu Frame:
 
 ```bash
 cd /opt/aqms-portable

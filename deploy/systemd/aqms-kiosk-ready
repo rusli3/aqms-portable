@@ -22,9 +22,7 @@ log_message() {
 for ((attempt = 1; attempt <= max_attempts; attempt += 1)); do
     if "${curl_bin}" --fail --silent --show-error --max-time 2 \
         "${health_url}" >/dev/null 2>&1; then
-        log_message "AQMS lokal sehat; menyegarkan layanan kiosk"
-        "${systemctl_bin}" restart snap.ubuntu-frame.daemon.service
-        "${sleep_bin}" 2
+        log_message "AQMS lokal sehat; menyegarkan WPE kiosk"
         "${systemctl_bin}" restart snap.wpe-webkit-mir-kiosk.daemon.service
         log_message "kiosk AQMS siap"
         exit 0

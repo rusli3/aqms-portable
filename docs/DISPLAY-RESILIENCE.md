@@ -16,7 +16,8 @@ Perbaikan terdiri dari dua lapisan:
 1. Ethernet ditandai `optional` pada Netplan sehingga boot tidak menunggu kabel.
 2. Drop-in wait-online mengabaikan hanya interface Ethernet administrasi.
 3. `aqms-kiosk-ready.service` menunggu `/health.php` berhasil, lalu menyegarkan
-   Ubuntu Frame dan WPE agar dashboard tampil tanpa menyentuh **Try Again**.
+   WPE satu kali agar dashboard tampil tanpa menyentuh **Try Again**. Ubuntu
+   Frame tidak direstart agar panel tidak berkedip dua kali.
 
 ## Pemasangan
 

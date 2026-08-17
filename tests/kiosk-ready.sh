@@ -38,7 +38,6 @@ AQMS_KIOSK_READY_ATTEMPTS=4 \
 
 [[ "$(<"${test_dir}/attempts")" == "3" ]]
 diff -u <(printf '%s\n' \
-    'restart snap.ubuntu-frame.daemon.service' \
     'restart snap.wpe-webkit-mir-kiosk.daemon.service') \
     "${test_dir}/systemctl.log"
 
