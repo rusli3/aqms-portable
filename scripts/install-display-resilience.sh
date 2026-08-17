@@ -79,7 +79,8 @@ install -o root -g root -m 0644 \
     /etc/systemd/system/aqms-kiosk-ready.service
 
 systemctl daemon-reload
-systemctl enable --now aqms-kiosk-ready.service
+systemctl enable aqms-kiosk-ready.service
+systemctl restart aqms-kiosk-ready.service
 
 echo "ketahanan startup display terpasang untuk ${ethernet_interface}"
 echo "reboot diperlukan untuk menguji boot tanpa kabel LAN"
