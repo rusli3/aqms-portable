@@ -69,10 +69,6 @@ grep -q '>KONTROL DAYA</h2>' <<<"$dashboard_page"
 ! grep -q 'Pilih tindakan, masukkan PIN' <<<"$dashboard_page"
 grep -Fq 'grid-template-columns: repeat(3, 1fr)' app/dashboard/css/dashboard-7.css
 grep -Fq "'Diperbarui ' + formatTime(new Date(), true)" app/dashboard/js/dashboard-7.js
-[[ "$(curl -sS -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 405 ]]
-[[ "$(curl -sS -H 'Content-Type: application/json' -d '{"action":"reboot","pin":"2468"}' \
-  -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 503 ]]
-[[ "$(curl -sS -o /dev/null -w '%{http_code}' "${base_url}/display/")" == 403 ]]
 
 dashboard_html="${test_dir}/dashboard.html"
 kiosk_cookies="${test_dir}/kiosk.cookies"
@@ -80,6 +76,12 @@ phone_cookies="${test_dir}/phone.cookies"
 curl -fsS -c "$kiosk_cookies" "${base_url}/dashboard/" >"$dashboard_html"
 csrf="$(sed -n 's/.*data-csrf="\([^"]*\)".*/\1/p' "$dashboard_html" | head -n 1)"
 [[ "$csrf" =~ ^[a-f0-9]{48}$ ]]
+
+[[ "$(curl -sS -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 405 ]]
+[[ "$(curl -sS -b "$kiosk_cookies" -H 'Content-Type: application/json' -H "X-AQMS-CSRF: ${csrf}" \
+  -d '{"action":"reboot","pin":"2468"}' \
+  -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 503 ]]
+[[ "$(curl -sS -o /dev/null -w '%{http_code}' "${base_url}/display/")" == 403 ]]
 
 access_response="$(curl -fsS -b "$kiosk_cookies" -c "$kiosk_cookies" \
   -H 'Content-Type: application/json' -H "X-AQMS-CSRF: ${csrf}" \
