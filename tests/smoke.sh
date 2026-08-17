@@ -38,6 +38,9 @@ grep -qi '^content-security-policy:' <<<"$headers"
 curl -fsS "${base_url}/dashboard/" | grep -q 'chart.umd.min.js'
 curl -fsS "${base_url}/dashboard/" | grep -q 'id="powerMenuButton"'
 curl -fsS "${base_url}/dashboard/" | grep -q 'DINAS LINGKUNGAN HIDUP KABUPATEN SANGGAU'
+curl -fsS "${base_url}/dashboard/" | grep -q '>KONTROL DAYA</h2>'
+! curl -fsS "${base_url}/dashboard/" | grep -q 'Pilih tindakan, masukkan PIN'
+grep -Fq 'grid-template-columns: repeat(3, 1fr)' app/dashboard/css/dashboard-7.css
 grep -Fq "'Diperbarui ' + formatTime(new Date(), true)" app/dashboard/js/dashboard-7.js
 [[ "$(curl -sS -o /dev/null -w '%{http_code}' "${base_url}/admin/power.php")" == 405 ]]
 [[ "$(curl -sS -H 'Content-Type: application/json' -d '{"action":"reboot","pin":"0000"}' \

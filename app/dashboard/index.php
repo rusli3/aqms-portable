@@ -217,33 +217,25 @@ $organizationName = htmlspecialchars(
     >
         <div class="power-dialog">
             <div class="power-dialog-head">
-                <div>
-                    <span class="eyebrow">KONTROL ADMINISTRATOR</span>
-                    <h2 id="powerDialogTitle">Daya unit AQMS</h2>
-                </div>
+                <h2 id="powerDialogTitle">KONTROL DAYA</h2>
                 <button class="power-close" id="powerCloseButton" type="button" aria-label="Tutup menu daya">&times;</button>
             </div>
 
-            <p class="power-warning">Pilih tindakan, masukkan PIN, lalu konfirmasi. Akuisisi data akan berhenti sementara.</p>
-
             <div class="power-actions" role="group" aria-label="Pilih tindakan daya">
-                <button class="power-action" type="button" data-power-action="reboot">
+                <button class="power-action" type="button" data-power-action="reboot" aria-label="Mulai ulang sistem" title="Mulai ulang">
                     <span class="power-action-icon reboot" aria-hidden="true">
                         <svg viewBox="0 0 24 24"><path d="M20 6v5h-5"/><path d="M18.5 9A7 7 0 1 0 19 15"/></svg>
                     </span>
-                    <span><strong>Mulai ulang</strong><small>Reboot sistem dengan aman</small></span>
                 </button>
-                <button class="power-action danger" type="button" data-power-action="shutdown">
+                <button class="power-action danger" type="button" data-power-action="shutdown" aria-label="Matikan sistem" title="Matikan">
                     <span class="power-action-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6.7 6.7a7.5 7.5 0 1 0 10.6 0"/></svg>
                     </span>
-                    <span><strong>Matikan unit</strong><small>Shutdown sebelum melepas daya</small></span>
                 </button>
             </div>
 
             <div class="pin-panel">
                 <div class="pin-heading">
-                    <span>PIN ADMIN</span>
                     <div class="pin-dots" id="pinDots" aria-label="PIN belum diisi"></div>
                 </div>
                 <div class="pin-keypad" id="pinKeypad" aria-label="Keypad PIN">
@@ -263,7 +255,7 @@ $organizationName = htmlspecialchars(
             </div>
 
             <div class="power-dialog-foot">
-                <p id="powerStatus" role="status">Pilih tindakan dan masukkan 4–8 digit PIN.</p>
+                <p id="powerStatus" role="status">PIN 4–8 DIGIT</p>
                 <button class="power-confirm" id="powerConfirmButton" type="button" disabled>Konfirmasi</button>
             </div>
         </div>

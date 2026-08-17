@@ -228,10 +228,6 @@
     }
   }
 
-  function powerActionLabel() {
-    return powerAction === 'reboot' ? 'Mulai ulang' : 'Matikan unit';
-  }
-
   function updatePowerPanel() {
     var enabled = elements.powerModal.dataset.enabled === 'true';
     var validPin = powerPin.length >= 4 && powerPin.length <= 8;
@@ -251,12 +247,12 @@
     elements.pinKeys.forEach(function (button) { button.disabled = powerBusy || !enabled; });
     elements.powerConfirm.disabled = powerBusy || !enabled || !powerAction || !validPin;
     elements.powerConfirm.classList.toggle('is-danger', powerAction === 'shutdown');
-    setText(elements.powerConfirm, powerBusy ? 'Memproses…' : (powerAction ? 'Konfirmasi ' + powerActionLabel() : 'Konfirmasi'));
+    setText(elements.powerConfirm, powerBusy ? 'Memproses…' : 'Konfirmasi');
 
     if (!enabled) {
       setText(elements.powerStatus, 'Kontrol daya belum diaktifkan oleh administrator.');
     } else if (!powerBusy && powerAction && !validPin) {
-      setText(elements.powerStatus, 'Masukkan 4–8 digit PIN untuk ' + powerActionLabel().toLowerCase() + '.');
+      setText(elements.powerStatus, 'PIN 4–8 DIGIT');
     }
   }
 
@@ -264,7 +260,7 @@
     powerAction = '';
     powerPin = '';
     powerBusy = false;
-    setText(elements.powerStatus, 'Pilih tindakan dan masukkan 4–8 digit PIN.');
+    setText(elements.powerStatus, 'PIN 4–8 DIGIT');
     updatePowerPanel();
   }
 
@@ -365,7 +361,7 @@
     elements.powerActions.forEach(function (button) {
       button.addEventListener('click', function () {
         powerAction = button.dataset.powerAction;
-        setText(elements.powerStatus, 'Masukkan PIN untuk ' + powerActionLabel().toLowerCase() + '.');
+        setText(elements.powerStatus, 'PIN 4–8 DIGIT');
         updatePowerPanel();
       });
     });
