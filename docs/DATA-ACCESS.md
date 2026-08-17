@@ -30,6 +30,16 @@ AQMS_WIFI_HIDDEN=false
 AQMS_DATA_URL=http://192.168.100.135/display/
 ```
 
+Pada unit produksi yang profil Wi-Fi-nya sudah tersimpan di NetworkManager,
+konfigurasi dapat diambil tanpa menampilkan PSK:
+
+```bash
+sudo scripts/configure-data-access.sh
+```
+
+Skrip membuat backup `.env`, memperbarui container web, memeriksa health, dan
+menyegarkan kiosk. PSK tidak ditulis ke terminal.
+
 Jangan commit `.env` atau menyalin PSK ke dokumentasi, issue, tangkapan layar,
 dan log. Setelah mengubah konfigurasi, recreate service web.
 
