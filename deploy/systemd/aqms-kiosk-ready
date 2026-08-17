@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+health_url="${AQMS_KIOSK_HEALTH_URL:-http://127.0.0.1/health.php}"
+max_attempts="${AQMS_KIOSK_READY_ATTEMPTS:-120}"
+retry_seconds="${AQMS_KIOSK_READY_RETRY_SECONDS:-1}"
+curl_bin="${AQMS_CURL_BIN:-/usr/bin/curl}"
+systemctl_bin="${AQMS_SYSTEMCTL_BIN:-/usr/bin/systemctl}"
+sleep_bin="${AQMS_SLEEP_BIN:-/usr/bin/sleep}"
+logger_bin="${AQMS_LOGGER_BIN:-/usr/bin/logger}"
+
+if [[ ! "${max_attempts}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "AQMS_KIOSK_READY_ATTEMPTS harus berupa bilangan bulat positif" >&2
+    exit 64
+fi
+
+log_message() {
+    "${logger_bin}" -t aqms-kiosk-ready -- "$1"
+    echo "$1"
+}
+
+for ((attempt = 1; attempt <= max_attempts; attempt += 1)); do
+    if "${curl_bin}" --fail --silent --show-error --max-time 2 \
+        "${health_url}" >/dev/null 2>&1; then
+        log_message "AQMS lokal sehat; menyegarkan layanan kiosk"
+        "${systemctl_bin}" restart snap.ubuntu-frame.daemon.service
+        "${sleep_bin}" 2
+        "${systemctl_bin}" restart snap.wpe-webkit-mir-kiosk.daemon.service
+        log_message "kiosk AQMS siap"
+        exit 0
+    fi
+
+    if ((attempt < max_attempts)); then
+        "${sleep_bin}" "${retry_seconds}"
+    fi
+done
+
+log_message "dashboard lokal belum sehat setelah ${max_attempts} percobaan"
+exit 1

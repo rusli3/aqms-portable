@@ -1,0 +1,30 @@
+[Unit]
+Description=Wait for local AQMS and refresh the kiosk display
+Documentation=https://github.com/rusli3/aqms-portable
+After=docker.service snap.ubuntu-frame.daemon.service
+Wants=docker.service snap.ubuntu-frame.daemon.service
+ConditionPathExists=/usr/bin/snap
+StartLimitIntervalSec=5min
+StartLimitBurst=6
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/usr/local/libexec/aqms-kiosk-ready
+Restart=on-failure
+RestartSec=10s
+RemainAfterExit=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+
+[Install]
+WantedBy=multi-user.target

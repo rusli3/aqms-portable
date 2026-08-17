@@ -35,6 +35,8 @@ lebih aman dan mudah dipulihkan.
 - Tombol fullscreen dan tata letak responsif untuk panel lapangan.
 - Menu reboot/shutdown dengan keypad PIN, pembatasan percobaan, token sesi, dan
   broker systemd host yang hanya menerima dua tindakan daya terverifikasi.
+- Startup kiosk tahan terhadap Ethernet yang tidak terpasang: boot tidak menunggu
+  kabel LAN dan display otomatis dimuat ulang setelah aplikasi lokal sehat.
 
 ## Arsitektur singkat
 

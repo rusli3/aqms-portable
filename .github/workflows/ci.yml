@@ -20,5 +20,7 @@ jobs:
           docker run --rm -v "$PWD:/workspace:ro" php:8.3.32-apache-bookworm@sha256:ff23b916a51fb99b2a2afddb8649d1b96e15337f6b15fb0ce5179a950c00aae2 php /workspace/tests/ispu.php
           docker run --rm -v "$PWD:/workspace:ro" -w /workspace php:8.3.32-apache-bookworm@sha256:ff23b916a51fb99b2a2afddb8649d1b96e15337f6b15fb0ce5179a950c00aae2 sh -c "find app -name '*.php' -print0 | xargs -0 -n1 php -l"
           node --check app/dashboard/js/dashboard-7.js
+      - name: Kiosk startup readiness
+        run: tests/kiosk-ready.sh
       - name: Integration, legacy route, and persistence
         run: tests/smoke.sh

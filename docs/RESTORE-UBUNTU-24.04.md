@@ -336,16 +336,27 @@ Salin backup dan checksumnya ke media kedua.
 
 ## 12. Kiosk layar 7 inci
 
-Restore database tidak mengatur desktop. Setelah Xorg, window manager ringan,
-dan Chromium dipasang, gunakan URL produksi:
+Deployment referensi memakai Ubuntu Frame dan WPE WebKit Mir Kiosk:
 
 ```bash
-chromium-browser --kiosk --noerrdialogs http://127.0.0.1/dashboard/
+sudo snap install ubuntu-frame
+sudo snap install wpe-webkit-mir-kiosk
+sudo snap connect wpe-webkit-mir-kiosk:wayland ubuntu-frame
+sudo snap set ubuntu-frame daemon=true
+sudo snap set ubuntu-frame config="cursor=null"
+sudo snap set wpe-webkit-mir-kiosk daemon=true
+sudo snap set wpe-webkit-mir-kiosk url=http://127.0.0.1/dashboard/
+
+cd /opt/aqms-portable
+sudo scripts/install-display-resilience.sh
 ```
 
-Nama executable dapat berupa `chromium`, tergantung metode instalasi. Uji resolusi
-800×480 atau 1024×600, touchscreen, fullscreen, dan start otomatis setelah listrik
-diputus lalu disambungkan kembali.
+Installer terakhir membuat Ethernet opsional dan menunggu aplikasi lokal sehat
+sebelum menyegarkan kiosk. Uji resolusi 800×480 atau 1024×600, touchscreen,
+fullscreen, dan start otomatis setelah listrik diputus lalu disambungkan kembali.
+Lakukan satu cold boot tanpa kabel Ethernet; dashboard harus tampil tanpa menekan
+**Try Again**. Lihat [Ketahanan Startup Display](DISPLAY-RESILIENCE.md) untuk
+diagnostik dan rollback.
 
 ## 13. Checklist penerimaan
 
@@ -356,6 +367,7 @@ Restore dinyatakan selesai hanya bila seluruh kondisi berikut terpenuhi:
 - [ ] jumlah dan rentang waktu data lama masuk akal;
 - [ ] `CHECK TABLE maintb, coretb` menghasilkan `OK`;
 - [ ] dashboard tampil benar pada layar 7 inci;
+- [ ] dashboard tampil otomatis saat boot tanpa kabel Ethernet;
 - [ ] PM2.5, PM10, dan status ISPU tampil;
 - [ ] paket sensor baru menambah baris `maintb`;
 - [ ] scheduler menambah `coretb` tanpa duplikasi;
