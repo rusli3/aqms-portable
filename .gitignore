@@ -1,4 +1,5 @@
 .env
+.env.*
 .DS_Store
 
 # Operational or recovered data must never be published.
