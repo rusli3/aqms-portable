@@ -23,12 +23,25 @@ cleanup() {
 }
 trap cleanup EXIT
 
+wait_for_health() {
+    local first_response second_response
+    for _ in $(seq 1 60); do
+        first_response="$(curl -fsS "${base_url}/health.php" 2>/dev/null || true)"
+        if [[ "$first_response" == "ok" ]]; then
+            sleep 1
+            second_response="$(curl -fsS "${base_url}/health.php" 2>/dev/null || true)"
+            [[ "$second_response" == "ok" ]] && return 0
+        fi
+        sleep 1
+    done
+    echo "AQMS test stack did not reach stable health" >&2
+    docker compose ps >&2 || true
+    docker compose logs --tail=80 web >&2 || true
+    return 1
+}
+
 docker compose up -d --build
-for _ in $(seq 1 60); do
-    if curl -fsS "${base_url}/health.php" >/dev/null; then break; fi
-    sleep 1
-done
-curl -fsS "${base_url}/health.php" | grep -qx ok
+wait_for_health
 
 query='pm1=12&pm25=18&pm10=24&temp=29.5&humd=72&ampere=1.2&baterai=85&pompa=1023&volt=12.4&press=1008'
 [[ "$(curl -sS -o /dev/null -w '%{http_code}' "${base_url}/insert.php?${query}")" == 401 ]]
@@ -97,10 +110,7 @@ core_after_second="$(docker compose exec -T database sh -c 'mysql -N -uaqms -p"$
 before="$(docker compose exec -T database sh -c 'mysql -N -uaqms -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SELECT COUNT(*) FROM maintb"')"
 docker compose down
 docker compose up -d
-for _ in $(seq 1 60); do
-    if curl -fsS "${base_url}/health.php" >/dev/null; then break; fi
-    sleep 1
-done
+wait_for_health
 after="$(docker compose exec -T database sh -c 'mysql -N -uaqms -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SELECT COUNT(*) FROM maintb"')"
 [[ "$before" == "$after" && "$after" -ge 1 ]]
 
