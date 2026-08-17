@@ -220,14 +220,6 @@
     setText(elements.date, now.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: 'short' }));
   }
 
-  function toggleFullscreen() {
-    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen().catch(function () {});
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen();
-    }
-  }
-
   function updatePowerPanel() {
     var enabled = elements.powerModal.dataset.enabled === 'true';
     var validPin = powerPin.length >= 4 && powerPin.length <= 8;
@@ -336,7 +328,7 @@
       batteryFill: byId('batteryFill'), systemBadge: byId('systemBadge'), lastReading: byId('lastReadingTime'),
       sensorLink: byId('sensorLink'), sensorLinkText: byId('sensorLinkText'), clock: byId('liveClock'),
       date: byId('liveDate'), refresh: byId('refreshButton'), updateMessage: byId('updateMessage'),
-      fullscreen: byId('fullscreenButton'), chart: byId('particleChart'),
+      chart: byId('particleChart'),
       powerMenu: byId('powerMenuButton'), powerModal: byId('powerModal'),
       powerClose: byId('powerCloseButton'), powerStatus: byId('powerStatus'),
       powerConfirm: byId('powerConfirmButton'), pinDots: byId('pinDots'),
@@ -352,7 +344,6 @@
     render({ latest: null, history: [] });
     fetchData(false);
     elements.refresh.addEventListener('click', function () { fetchData(true); });
-    elements.fullscreen.addEventListener('click', toggleFullscreen);
     elements.powerMenu.addEventListener('click', openPowerPanel);
     elements.powerClose.addEventListener('click', closePowerPanel);
     elements.powerModal.addEventListener('click', function (event) {

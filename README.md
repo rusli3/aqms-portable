@@ -32,7 +32,7 @@ lebih aman dan mudah dipulihkan.
   laju kirim, nama parameter, dan rentang nilai; token dapat diaktifkan.
 - Agregasi lokal lima menit dari data mentah ke data ringkasan.
 - Scheduler berjalan otomatis sebagai service dan mencegah bucket duplikat.
-- Tombol fullscreen dan tata letak responsif untuk panel lapangan.
+- Tata letak responsif untuk panel lapangan dalam mode kiosk layar penuh.
 - Menu reboot/shutdown dengan keypad PIN, pembatasan percobaan, token sesi, dan
   broker systemd host yang hanya menerima dua tindakan daya terverifikasi.
 - Startup kiosk tahan terhadap Ethernet yang tidak terpasang: boot tidak menunggu

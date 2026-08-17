@@ -37,6 +37,7 @@ grep -qi '^content-security-policy:' <<<"$headers"
 ! grep -Eqi '^server:.*[0-9]' <<<"$headers"
 curl -fsS "${base_url}/dashboard/" | grep -q 'chart.umd.min.js'
 curl -fsS "${base_url}/dashboard/" | grep -q 'id="powerMenuButton"'
+! curl -fsS "${base_url}/dashboard/" | grep -q 'id="fullscreenButton"'
 curl -fsS "${base_url}/dashboard/" | grep -q 'DINAS LINGKUNGAN HIDUP KABUPATEN SANGGAU'
 curl -fsS "${base_url}/dashboard/" | grep -q 'class="footer-organization">DINAS LINGKUNGAN HIDUP KABUPATEN SANGGAU'
 curl -fsS "${base_url}/dashboard/" | grep -q 'class="footer-status"'

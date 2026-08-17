@@ -60,9 +60,6 @@ $organizationName = htmlspecialchars(
                     <strong id="liveClock">--:--</strong>
                     <span id="liveDate">---</span>
                 </div>
-                <button class="icon-button" id="fullscreenButton" type="button" aria-label="Tampilkan layar penuh" title="Layar penuh">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
-                </button>
                 <button class="icon-button power-menu-button" id="powerMenuButton" type="button" aria-label="Buka menu daya" title="Menu daya">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9"/><path d="M6.7 6.7a7.5 7.5 0 1 0 10.6 0"/></svg>
                 </button>
